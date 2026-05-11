@@ -6,7 +6,7 @@ Hệ thống nền tảng dự đoán kết quả và cá cược (Betting Platf
 
 Dự án được chia thành hai phần chính (Backend và Frontend), hoạt động dưới dạng Client-Server và giao tiếp qua REST API & Socket.IO.
 
-- **Frontend (`/frontend`)**: Được xây dựng bằng **Next.js 15**, **TailwindCSS v4**, **Zustand** (quản lý state), và **Framer Motion** (hiệu ứng UI mô phỏng app 1xBet / platform betting). Chạy trên cổng `3001`.
+- **Frontend (`/frontend`)**: Được xây dựng bằng **Next.js 15**, **TailwindCSS v4**, **Zustand** (quản lý state), và **Framer Motion** (hiệu ứng UI mô phỏng app 1xBet / platform betting). Chạy trên cổng `8000`.
 - **Backend (`/backend`)**: Được xây dựng bằng **Express.js (Node.js)**, **TypeScript**, **Mongoose**, và **Socket.IO**. Chạy trên cổng `3005`.
 - **Database**: Sử dụng MongoDB (Atlas) với kiến trúc Dual-connection:
   - `betting_db`: Lưu trữ dữ liệu về Race, Uma, Trainer, Người dùng (điểm số), và Lịch sử cược.
@@ -104,7 +104,7 @@ cd frontend
 npm run dev
 ```
 
-Frontend sẽ khởi chạy tại: `http://localhost:3001` (Web UI)
+Frontend sẽ khởi chạy tại: `http://localhost:8000` (Web UI)
 
 _(Lưu ý: Bạn phải chạy song song cả 2 terminal để hệ thống hoạt động)._
 
@@ -112,13 +112,13 @@ _(Lưu ý: Bạn phải chạy song song cả 2 terminal để hệ thống ho�
 
 ### 1. Người chơi (User/Player)
 
-- Truy cập vào trang chủ (`http://localhost:3001`), nhấn Đăng nhập bằng **Mã vé (Ticket Code)**.
+- Truy cập vào trang chủ (`http://localhost:8000`), nhấn Đăng nhập bằng **Mã vé (Ticket Code)**.
 - Hệ thống tự động xác minh mã vé với Database của EViENT và phân loại User Tier (Normal / VIP / Deluxe).
 - Số điểm gốc ban đầu được cấp dựa trên hạng vé.
 
 ### 2. Quản trị viên (Admin)
 
-- Truy cập vào: `http://localhost:3001/login` và click "Admin Login".
+- Truy cập vào: `http://localhost:8000/login` và click "Admin Login".
 - Thông tin đăng nhập mặc định (theo `.env`):
   - **Username**: `admin`
   - **Password**: `admin123`
