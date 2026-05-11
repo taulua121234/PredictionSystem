@@ -4,3 +4,5 @@ dist/
 .env
 *.log
 backend/uploads/
+frontend/AGENT.md
+frontend/CLAUDE.md
