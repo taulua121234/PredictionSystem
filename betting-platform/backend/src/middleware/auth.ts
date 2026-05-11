@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import * as respond from '../utils/responseHelper';
+import { BettingUser } from '../models/User';
 
 export interface JwtPayload {
   id: string;
@@ -21,7 +22,7 @@ declare global {
 /**
  * Verify JWT token and attach user payload to request
  */
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -37,6 +38,20 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     }
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
+    
+    // Check if user is locked
+    if (decoded.role === 'user') {
+      const userRecord = await BettingUser.findById(decoded.id).select('isLocked').lean();
+      if (!userRecord) {
+         respond.unauthorized(res, 'User not found');
+         return;
+      }
+      if (userRecord.isLocked) {
+         respond.forbidden(res, 'Tài khoản của bạn đã bị khóa');
+         return;
+      }
+    }
+
     req.user = decoded;
     next();
   } catch (err: any) {

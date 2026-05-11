@@ -12,6 +12,7 @@ export interface IUma extends Document {
     wisdom?: number;
   };
   isActive: boolean;
+  trainerId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const umaSchema = new Schema<IUma>(
       wisdom: { type: Number, min: 0, max: 100 },
     },
     isActive: { type: Boolean, default: true, index: true },
+    trainerId: { type: Schema.Types.ObjectId, ref: 'Trainer', index: true },
   },
   { timestamps: true }
 );

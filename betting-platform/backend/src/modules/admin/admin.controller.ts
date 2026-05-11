@@ -160,6 +160,14 @@ export async function setRaceResult(req: Request, res: Response) {
  */
 export async function createUma(req: Request, res: Response) {
   try {
+    const { trainerId } = req.body;
+    if (trainerId) {
+      const umaCount = await Uma.countDocuments({ trainerId });
+      if (umaCount >= 3) {
+        return respond.badRequest(res, 'Trainer already has maximum of 3 Umas');
+      }
+    }
+
     const uma = await Uma.create(req.body);
     respond.created(res, uma);
   } catch (err: any) {
@@ -174,8 +182,18 @@ export async function createUma(req: Request, res: Response) {
  */
 export async function updateUma(req: Request, res: Response) {
   try {
+    const { trainerId } = req.body;
+    const existingUma = await Uma.findById(req.params.id);
+    if (!existingUma) return respond.notFound(res, 'Uma not found');
+
+    if (trainerId && trainerId !== existingUma.trainerId?.toString()) {
+      const umaCount = await Uma.countDocuments({ trainerId });
+      if (umaCount >= 3) {
+        return respond.badRequest(res, 'New trainer already has maximum of 3 Umas');
+      }
+    }
+
     const uma = await Uma.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!uma) return respond.notFound(res, 'Uma not found');
     respond.success(res, uma);
   } catch (err) {
     logger.error('Update uma error:', err);
@@ -234,6 +252,19 @@ export async function uploadUmaInfoImage(req: Request, res: Response) {
 }
 
 // ==================== Trainer Management ====================
+
+/**
+ * GET /admin/trainers
+ */
+export async function listTrainers(req: Request, res: Response) {
+  try {
+    const trainers = await Trainer.find().sort({ createdAt: -1 }).lean();
+    respond.success(res, trainers);
+  } catch (err) {
+    logger.error('List trainers error:', err);
+    respond.serverError(res, 'Failed to list trainers');
+  }
+}
 
 /**
  * POST /admin/trainers
@@ -336,6 +367,47 @@ export async function adjustPoints(req: Request, res: Response) {
   } catch (err) {
     logger.error('Adjust points error:', err);
     respond.serverError(res, 'Failed to adjust points');
+  }
+}
+
+/**
+ * DELETE /admin/users/:id
+ */
+export async function deleteUser(req: Request, res: Response) {
+  try {
+    const user = await BettingUser.findById(req.params.id);
+    if (!user) return respond.notFound(res, 'User not found');
+    if (user.role === 'admin') return respond.badRequest(res, 'Cannot delete admin');
+
+    await BettingUser.findByIdAndDelete(req.params.id);
+    await Bet.deleteMany({ userId: user._id });
+    await Transaction.deleteMany({ userId: user._id });
+
+    logger.info(`User deleted: ${user.username}`);
+    respond.success(res, { message: 'User deleted' });
+  } catch (err) {
+    logger.error('Delete user error:', err);
+    respond.serverError(res, 'Failed to delete user');
+  }
+}
+
+/**
+ * PATCH /admin/users/:id/lock
+ */
+export async function toggleLockUser(req: Request, res: Response) {
+  try {
+    const user = await BettingUser.findById(req.params.id);
+    if (!user) return respond.notFound(res, 'User not found');
+    if (user.role === 'admin') return respond.badRequest(res, 'Cannot lock admin');
+
+    user.isLocked = !user.isLocked;
+    await user.save();
+
+    logger.info(`User ${user.username} isLocked set to ${user.isLocked}`);
+    respond.success(res, { isLocked: user.isLocked });
+  } catch (err) {
+    logger.error('Lock user error:', err);
+    respond.serverError(res, 'Failed to toggle user lock status');
   }
 }
 

@@ -4,8 +4,8 @@ import { settleRace } from '../settlement/settlement.controller';
 import {
   createRace, updateRace, changeRaceState, setRaceResult,
   createUma, updateUma, deleteUma, uploadUmaInfoImage, uploadInfoImage,
-  createTrainer, updateTrainer, deleteTrainer,
-  listUsers, adjustPoints,
+  createTrainer, updateTrainer, deleteTrainer, listTrainers,
+  listUsers, adjustPoints, deleteUser, toggleLockUser,
   getDashboardStats,
 } from './admin.controller';
 
@@ -31,6 +31,7 @@ router.delete('/umas/:id', asyncHandler(deleteUma));
 router.post('/umas/:id/info-image', uploadInfoImage.single('infoImage'), asyncHandler(uploadUmaInfoImage));
 
 // Trainer management
+router.get('/trainers', asyncHandler(listTrainers));
 router.post('/trainers', asyncHandler(createTrainer));
 router.put('/trainers/:id', asyncHandler(updateTrainer));
 router.delete('/trainers/:id', asyncHandler(deleteTrainer));
@@ -38,5 +39,7 @@ router.delete('/trainers/:id', asyncHandler(deleteTrainer));
 // User management
 router.get('/users', asyncHandler(listUsers));
 router.patch('/users/:id/adjust-points', asyncHandler(adjustPoints));
+router.delete('/users/:id', asyncHandler(deleteUser));
+router.patch('/users/:id/lock', asyncHandler(toggleLockUser));
 
 export default router;
