@@ -4,7 +4,10 @@ import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('websocket');
 
+let ioInstance: SocketServer | null = null;
+
 export function setupSocketHandlers(io: SocketServer) {
+  ioInstance = io;
   // JWT authentication for socket connections
   io.use((socket: Socket, next) => {
     const token = socket.handshake.auth.token;
@@ -55,6 +58,10 @@ export function setupSocketHandlers(io: SocketServer) {
   });
 
   logger.info('WebSocket handlers initialized');
+}
+
+export function getIO(): SocketServer | null {
+  return ioInstance;
 }
 
 /**

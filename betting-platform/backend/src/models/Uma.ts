@@ -19,7 +19,7 @@ export interface IUma extends Document {
 
 const umaSchema = new Schema<IUma>(
   {
-    name: { type: String, required: true, trim: true, unique: true },
+    name: { type: String, required: true, trim: true },
     imageUrl: { type: String },
     infoImageUrl: { type: String },
     stats: {

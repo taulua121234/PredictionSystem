@@ -8,6 +8,8 @@ import { createLogger } from './utils/logger';
 const logger = createLogger('server');
 const PORT = process.env.BETTING_PORT || 3005;
 
+import { startCronJobs } from './tasks/cron';
+
 async function start() {
   try {
     // Connect to MongoDB
@@ -28,6 +30,9 @@ async function start() {
 
     // Make io accessible to controllers
     app.set('io', io);
+
+    // Start cron jobs
+    startCronJobs();
 
     // Start server
     server.listen(PORT, () => {

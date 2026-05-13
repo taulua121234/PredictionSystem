@@ -12,6 +12,7 @@ export interface IBettingUser extends Document {
   passwordHash?: string;
   isActive: boolean;
   isLocked: boolean;
+  hasChangedName: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +39,7 @@ const bettingUserSchema = new Schema<IBettingUser>(
     passwordHash: { type: String },
     isActive: { type: Boolean, default: true },
     isLocked: { type: Boolean, default: false },
+    hasChangedName: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

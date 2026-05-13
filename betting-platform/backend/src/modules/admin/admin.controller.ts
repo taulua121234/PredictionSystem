@@ -10,24 +10,13 @@ import { Transaction } from '../../models/Transaction';
 import { Bet } from '../../models/Bet';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
+import cloudinary from '../../utils/cloudinary';
 
 const logger = createLogger('admin');
 
 // ==================== Multer Config for Uma Info Images ====================
 
-const uploadsDir = path.join(__dirname, '../../../uploads/uma-info');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = `uma-info-${Date.now()}${ext}`;
-    cb(null, name);
-  },
-});
+const storage = multer.memoryStorage();
 
 export const uploadInfoImage = multer({
   storage,
@@ -52,6 +41,21 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   SETTLED: [],
 };
 
+async function populateTrainerIdForEntries(entries: any[]) {
+  if (!entries || !Array.isArray(entries)) return entries;
+  for (const entry of entries) {
+    if (entry.umaId) {
+      const uma = await Uma.findById(entry.umaId).lean();
+      if (uma && uma.trainerId) {
+        entry.trainerId = uma.trainerId;
+      } else {
+        entry.trainerId = undefined;
+      }
+    }
+  }
+  return entries;
+}
+
 /**
  * POST /admin/races
  */
@@ -63,12 +67,14 @@ export async function createRace(req: Request, res: Response) {
       return respond.badRequest(res, 'raceName, startTime, closeBetTime are required');
     }
 
+    const populatedEntries = await populateTrainerIdForEntries(entries || []);
+
     const race = await Race.create({
       raceName,
       description,
       startTime: new Date(startTime),
       closeBetTime: new Date(closeBetTime),
-      entries: entries || [],
+      entries: populatedEntries,
       state: 'UPCOMING',
     });
 
@@ -93,7 +99,9 @@ export async function updateRace(req: Request, res: Response) {
     if (description !== undefined) race.description = description;
     if (startTime) race.startTime = new Date(startTime);
     if (closeBetTime) race.closeBetTime = new Date(closeBetTime);
-    if (entries) race.entries = entries;
+    if (entries) {
+      race.entries = await populateTrainerIdForEntries(entries);
+    }
 
     await race.save();
     respond.success(res, race);
@@ -141,6 +149,15 @@ export async function setRaceResult(req: Request, res: Response) {
     }
 
     const { first, second, third, winnerTrainerId } = req.body;
+
+    if (
+      (second && first === second) ||
+      (third && first === third) ||
+      (second && third && second === third)
+    ) {
+      return respond.badRequest(res, 'Top 3 Umas must be unique');
+    }
+
     race.result = { first, second, third, winnerTrainerId };
     race.state = 'FINISHED';
     await race.save();
@@ -160,7 +177,13 @@ export async function setRaceResult(req: Request, res: Response) {
  */
 export async function createUma(req: Request, res: Response) {
   try {
-    const { trainerId } = req.body;
+    const { trainerId, name } = req.body;
+
+    const duplicate = await Uma.findOne({ name, trainerId });
+    if (duplicate) {
+      return respond.badRequest(res, 'An Uma with this name and trainer already exists');
+    }
+
     if (trainerId) {
       const umaCount = await Uma.countDocuments({ trainerId });
       if (umaCount >= 3) {
@@ -182,9 +205,18 @@ export async function createUma(req: Request, res: Response) {
  */
 export async function updateUma(req: Request, res: Response) {
   try {
-    const { trainerId } = req.body;
+    const { trainerId, name } = req.body;
     const existingUma = await Uma.findById(req.params.id);
     if (!existingUma) return respond.notFound(res, 'Uma not found');
+
+    const duplicate = await Uma.findOne({ 
+      name: name || existingUma.name, 
+      trainerId: trainerId !== undefined ? trainerId : existingUma.trainerId, 
+      _id: { $ne: req.params.id } 
+    });
+    if (duplicate) {
+      return respond.badRequest(res, 'An Uma with this name and trainer already exists');
+    }
 
     if (trainerId && trainerId !== existingUma.trainerId?.toString()) {
       const umaCount = await Uma.countDocuments({ trainerId });
@@ -227,23 +259,23 @@ export async function uploadUmaInfoImage(req: Request, res: Response) {
 
     const uma = await Uma.findById(req.params.id);
     if (!uma) {
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
       return respond.notFound(res, 'Uma not found');
     }
 
-    // Delete old image if exists
-    if (uma.infoImageUrl) {
-      const oldPath = path.join(uploadsDir, path.basename(uma.infoImageUrl));
-      if (fs.existsSync(oldPath)) {
-        fs.unlinkSync(oldPath);
-      }
-    }
+    // Convert buffer to base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'evient/uma-info',
+      public_id: `uma-info-${Date.now()}`
+    });
 
-    uma.infoImageUrl = `/uploads/uma-info/${req.file.filename}`;
+    uma.infoImageUrl = result.secure_url;
     await uma.save();
 
-    logger.info(`Uma info image uploaded: ${uma.name}`);
+    logger.info(`Uma info image uploaded to Cloudinary: ${uma.name}`);
     respond.success(res, { infoImageUrl: uma.infoImageUrl });
   } catch (err) {
     logger.error('Upload uma info image error:', err);

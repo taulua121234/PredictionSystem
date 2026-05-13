@@ -90,6 +90,7 @@ export async function loginWithTicket(req: Request, res: Response) {
         totalBet: user.totalBet,
         totalPayout: user.totalPayout,
         role: user.role,
+        hasChangedName: user.hasChangedName,
       },
     });
   } catch (err) {
@@ -156,10 +157,43 @@ export async function getMe(req: Request, res: Response) {
       totalBet: user.totalBet,
       totalPayout: user.totalPayout,
       role: user.role,
+      hasChangedName: user.hasChangedName,
       createdAt: user.createdAt,
     });
   } catch (err) {
     logger.error('Get me error:', err);
     respond.serverError(res, 'Failed to fetch profile');
+  }
+}
+
+/**
+ * PUT /auth/me/rename
+ * Update username (and set hasChangedName to true)
+ */
+export async function renameUser(req: Request, res: Response) {
+  try {
+    const { name } = req.body;
+    if (!name || typeof name !== 'string' || name.trim().length < 3) {
+      return respond.badRequest(res, 'Name must be at least 3 characters long');
+    }
+
+    const user = await BettingUser.findById(req.user!.id);
+    if (!user) {
+      return respond.notFound(res, 'User not found');
+    }
+
+    user.username = name.trim();
+    user.hasChangedName = true;
+    await user.save();
+
+    logger.info(`User renamed: ${user._id} to ${user.username}`);
+    
+    respond.success(res, {
+      username: user.username,
+      hasChangedName: user.hasChangedName
+    });
+  } catch (err) {
+    logger.error('Rename user error:', err);
+    respond.serverError(res, 'Failed to rename user');
   }
 }

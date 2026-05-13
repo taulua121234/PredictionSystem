@@ -53,15 +53,25 @@ export async function placeBet(req: Request, res: Response) {
       }
       oddAtBetTime = entry.odd;
     } else if (category === 'TRAINER_WIN' && prediction.trainerId) {
-      const entry = race.entries.find(e => e.trainerId?.toString() === prediction.trainerId);
-      if (!entry) {
+      const trainerEntries = race.entries.filter(e => e.trainerId?.toString() === prediction.trainerId);
+      if (trainerEntries.length === 0) {
         await session.abortTransaction();
         return respond.badRequest(res, 'Selected Trainer is not in this race');
       }
-      oddAtBetTime = entry.odd;
-    } else if (category === 'TRIFECTA') {
-      // Trifecta has higher odds (fixed multiplier for simplicity)
-      oddAtBetTime = 10;
+      const sumProbs = trainerEntries.reduce((sum, e) => sum + (1 / e.odd), 0);
+      oddAtBetTime = parseFloat((1 / sumProbs).toFixed(2));
+    } else if (category === 'TRIFECTA' && prediction.first && prediction.second && prediction.third) {
+      const firstEntry = race.entries.find(e => e.umaId.toString() === prediction.first);
+      const secondEntry = race.entries.find(e => e.umaId.toString() === prediction.second);
+      const thirdEntry = race.entries.find(e => e.umaId.toString() === prediction.third);
+
+      if (!firstEntry || !secondEntry || !thirdEntry) {
+        await session.abortTransaction();
+        return respond.badRequest(res, 'One or more selected Umas are not in this race');
+      }
+      
+      const combinedOdd = firstEntry.odd * secondEntry.odd * thirdEntry.odd * 12;
+      oddAtBetTime = parseFloat(combinedOdd.toFixed(2));
     } else {
       await session.abortTransaction();
       return respond.badRequest(res, 'Invalid category or prediction');
