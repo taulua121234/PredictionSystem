@@ -9,6 +9,7 @@ import * as respond from '../../utils/responseHelper';
 export async function listUmas(req: Request, res: Response) {
   try {
     const umas = await Uma.find({ isActive: true })
+      .populate('trainerId', 'name')
       .select('name imageUrl infoImageUrl stats trainerId')
       .sort({ name: 1 })
       .lean();
