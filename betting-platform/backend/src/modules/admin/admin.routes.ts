@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate, adminOnly, asyncHandler } from '../../middleware/auth';
 import { settleRace } from '../settlement/settlement.controller';
 import {
-  createRace, updateRace, changeRaceState, setRaceResult,
+  createRace, updateRace, changeRaceState, setRaceResult, deleteRace, cancelRace,
   createUma, updateUma, deleteUma, uploadUmaInfoImage, uploadInfoImage,
   createTrainer, updateTrainer, deleteTrainer, listTrainers,
   listUsers, adjustPoints, deleteUser, toggleLockUser,
@@ -23,6 +23,8 @@ router.put('/races/:id', asyncHandler(updateRace));
 router.patch('/races/:id/state', asyncHandler(changeRaceState));
 router.patch('/races/:id/result', asyncHandler(setRaceResult));
 router.post('/races/:id/settle', asyncHandler(settleRace));
+router.delete('/races/:id', asyncHandler(deleteRace));
+router.post('/races/:id/cancel', asyncHandler(cancelRace));
 
 // Uma management
 router.post('/umas', asyncHandler(createUma));

@@ -170,6 +170,97 @@ export async function setRaceResult(req: Request, res: Response) {
   }
 }
 
+/**
+ * DELETE /admin/races/:id
+ * Delete a race (only if no bets placed)
+ */
+export async function deleteRace(req: Request, res: Response) {
+  try {
+    const race = await Race.findById(req.params.id);
+    if (!race) return respond.notFound(res, 'Race not found');
+
+    const betCount = await Bet.countDocuments({ raceId: race._id });
+    if (betCount > 0) {
+      return respond.badRequest(res, 'Không thể xóa race đã có người đặt cược. Hãy dùng chức năng Hủy Race để hoàn điểm.');
+    }
+
+    await Race.findByIdAndDelete(race._id);
+    logger.info(`Race deleted: ${race.raceName}`);
+    respond.success(res, { message: 'Race deleted' });
+  } catch (err) {
+    logger.error('Delete race error:', err);
+    respond.serverError(res, 'Failed to delete race');
+  }
+}
+
+/**
+ * POST /admin/races/:id/cancel
+ * Cancel a race and refund all pending bets
+ */
+export async function cancelRace(req: Request, res: Response) {
+  try {
+    const race = await Race.findById(req.params.id);
+    if (!race) return respond.notFound(res, 'Race not found');
+
+    if (race.state === 'SETTLED') {
+      return respond.badRequest(res, 'Không thể hủy race đã thanh toán');
+    }
+
+    // Find all pending bets for this race
+    const pendingBets = await Bet.find({ raceId: race._id, status: 'pending' });
+
+    let refundedCount = 0;
+    let totalRefunded = 0;
+
+    for (const bet of pendingBets) {
+      const user = await BettingUser.findById(bet.userId);
+      if (!user) continue;
+
+      const balanceBefore = user.currentPoints;
+      user.currentPoints += bet.amount;
+      user.totalBet -= bet.amount;
+      await user.save();
+
+      bet.status = 'refunded';
+      bet.payout = bet.amount;
+      await bet.save();
+
+      await Transaction.create({
+        userId: user._id,
+        type: 'REFUND',
+        amount: bet.amount,
+        balanceBefore,
+        balanceAfter: user.currentPoints,
+        raceId: race._id,
+        betId: bet._id,
+        description: `Hoàn điểm do hủy race: ${race.raceName}`,
+      });
+
+      // Send real-time point update
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user:${user._id}`).emit('user:point', { currentPoints: user.currentPoints });
+      }
+
+      refundedCount++;
+      totalRefunded += bet.amount;
+    }
+
+    race.state = 'CANCELLED';
+    await race.save();
+
+    logger.info(`Race cancelled: ${race.raceName}. Refunded ${refundedCount} bets, total ${totalRefunded} points`);
+    respond.success(res, { 
+      message: `Đã hủy race và hoàn ${totalRefunded.toLocaleString()} điểm cho ${refundedCount} lượt cược`,
+      refundedCount,
+      totalRefunded,
+    });
+  } catch (err) {
+    logger.error('Cancel race error:', err);
+    respond.serverError(res, 'Failed to cancel race');
+  }
+}
+
 // ==================== Uma Management ====================
 
 /**

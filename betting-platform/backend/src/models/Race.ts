@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type RaceState = 'UPCOMING' | 'BETTING_OPEN' | 'LOCKED' | 'FINISHED' | 'SETTLED';
+export type RaceState = 'UPCOMING' | 'BETTING_OPEN' | 'LOCKED' | 'FINISHED' | 'SETTLED' | 'CANCELLED';
 
 export interface IRaceEntry {
   umaId: mongoose.Types.ObjectId;
@@ -52,7 +52,7 @@ const raceSchema = new Schema<IRace>(
     description: { type: String },
     state: {
       type: String,
-      enum: ['UPCOMING', 'BETTING_OPEN', 'LOCKED', 'FINISHED', 'SETTLED'],
+      enum: ['UPCOMING', 'BETTING_OPEN', 'LOCKED', 'FINISHED', 'SETTLED', 'CANCELLED'],
       default: 'UPCOMING',
       index: true,
     },
