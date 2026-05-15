@@ -13,7 +13,12 @@ export default function Footer() {
           </div>
           
           <p className="text-sm md:text-base text-text-secondary max-w-3xl font-medium leading-relaxed italic">
-            "Điểm trong trang web này chỉ phục vụ mục đích xếp hạng và không quy đổi thành tiền mặt dưới mọi hình thức"
+            &quot;Điểm trong trang web này chỉ phục vụ mục đích xếp hạng và không quy đổi thành tiền mặt dưới mọi hình thức&quot;
+            <br />
+            Trong trường hợp website này bị điều tra bởi các cơ quan trực thuộc bộ công an (hoặc các tổ chức chính trị tương tự phục vụ cho nhà nước CHXHCNVN), 
+            tôi khẳng định mình không liên quan tới website này hoặc những cá nhân khác trong website này. Tôi không rõ tại sao mình lại có mặt ở đây vào thời điểm này, 
+            có lẽ tài khoản của tôi đã được thêm bởi một bên thứ ba. Tôi cũng xin khẳng định rằng mình không hề giúp sức cho những hành động chống phá Đảng và nhà nước của các thành viên trong website này
+
           </p>
           
           <div className="pt-6 border-t border-border/50 w-full flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] sm:text-xs text-text-muted uppercase tracking-widest">

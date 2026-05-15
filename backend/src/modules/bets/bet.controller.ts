@@ -22,14 +22,15 @@ export async function placeBet(req: Request, res: Response) {
     const userId = req.user!.id;
 
     // Validate input
-    if (!raceId || !category || !prediction || !amount) {
+    if (!raceId || !category || !prediction || amount === undefined || amount === null || amount === '') {
       await session.abortTransaction();
       return respond.badRequest(res, 'raceId, category, prediction, and amount are required');
     }
 
-    if (amount < 10) {
+    const betAmount = Number(amount);
+    if (!Number.isFinite(betAmount) || betAmount < 0) {
       await session.abortTransaction();
-      return respond.badRequest(res, 'Minimum bet is 10 points');
+      return respond.badRequest(res, 'Bet amount must be 0 points or more');
     }
 
     // 1. Check race state
@@ -58,8 +59,9 @@ export async function placeBet(req: Request, res: Response) {
         await session.abortTransaction();
         return respond.badRequest(res, 'Selected Trainer is not in this race');
       }
-      const sumProbs = trainerEntries.reduce((sum, e) => sum + (1 / e.odd), 0);
-      oddAtBetTime = parseFloat((1 / sumProbs).toFixed(2));
+      const totalUmaProb = race.entries.reduce((sum, e) => sum + (1 / e.odd), 0);
+      const trainerTrueProb = trainerEntries.reduce((sum, e) => sum + ((1 / e.odd) / totalUmaProb), 0);
+      oddAtBetTime = parseFloat((1 / trainerTrueProb).toFixed(2));
     } else if (category === 'TRIFECTA' && prediction.first && prediction.second && prediction.third) {
       const firstEntry = race.entries.find(e => e.umaId.toString() === prediction.first);
       const secondEntry = race.entries.find(e => e.umaId.toString() === prediction.second);
@@ -83,15 +85,20 @@ export async function placeBet(req: Request, res: Response) {
       await session.abortTransaction();
       return respond.notFound(res, 'User not found');
     }
-    if (user.currentPoints < amount) {
+    const maxBetAmount = Math.floor(user.currentPoints * 0.7);
+    if (betAmount > maxBetAmount) {
       await session.abortTransaction();
-      return respond.badRequest(res, `Insufficient points. Current: ${user.currentPoints}, Required: ${amount}`);
+      return respond.badRequest(res, `Maximum bet is ${maxBetAmount} points (70% of current points)`);
+    }
+    if (user.currentPoints < betAmount) {
+      await session.abortTransaction();
+      return respond.badRequest(res, `Insufficient points. Current: ${user.currentPoints}, Required: ${betAmount}`);
     }
 
     // 4. Deduct points
     const balanceBefore = user.currentPoints;
-    user.currentPoints -= amount;
-    user.totalBet += amount;
+    user.currentPoints -= betAmount;
+    user.totalBet += betAmount;
     await user.save({ session });
 
     // 5. Create bet
@@ -101,7 +108,7 @@ export async function placeBet(req: Request, res: Response) {
         raceId,
         category,
         prediction,
-        amount,
+        amount: betAmount,
         oddAtBetTime,
         payout: 0,
         status: 'pending',
@@ -114,12 +121,12 @@ export async function placeBet(req: Request, res: Response) {
       [{
         userId,
         type: 'BET',
-        amount: -amount,
+        amount: -betAmount,
         balanceBefore,
         balanceAfter: user.currentPoints,
         raceId,
         betId: bet._id,
-        description: `Bet ${amount} on ${category}`,
+        description: `Bet ${betAmount} on ${category}`,
       }],
       { session }
     );
@@ -127,7 +134,7 @@ export async function placeBet(req: Request, res: Response) {
     // 7. Commit
     await session.commitTransaction();
 
-    logger.info(`Bet placed: ${user.username} → ${amount} pts on ${category} (race: ${race.raceName})`);
+    logger.info(`Bet placed: ${user.username} -> ${betAmount} pts on ${category} (race: ${race.raceName})`);
 
     respond.created(res, {
       bet: {

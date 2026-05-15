@@ -92,7 +92,7 @@ export default function LoginPage() {
                     type="text"
                     value={ticketCode}
                     onChange={(e) => setTicketCode(e.target.value)}
-                    placeholder="VD: TKT-XXXXXX"
+                    placeholder="VD: EVT-XXXXXXXX-XXXXXXXX"
                     className="w-full px-4 py-3 rounded-xl bg-bg-tertiary border border-border focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue/50 text-text-primary placeholder:text-text-muted transition-all"
                     disabled={loading}
                     id="ticket-code-input"

@@ -34,7 +34,7 @@ export default function RaceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const raceId = params.id as string;
-  const { isAuthenticated, updatePoints } = useAuthStore();
+  const { isAuthenticated, user, updatePoints } = useAuthStore();
 
   const [race, setRace] = useState<RaceData | null>(null);
   const [betStats, setBetStats] = useState<BetStats | null>(null);
@@ -52,6 +52,18 @@ export default function RaceDetailPage() {
 
   // Uma info popup
   const [popupUma, setPopupUma] = useState<{ name: string; infoImageUrl?: string } | null>(null);
+  const maxBetAmount = Math.floor((user?.currentPoints ?? 0) * 0.7);
+  const clampBetAmount = (amount: number) => Math.min(Math.max(amount, 0), maxBetAmount);
+
+  useEffect(() => {
+    if (!user) return;
+    // Only update if current amount exceeds new max. Defer update to avoid
+    // synchronous setState inside effect which can trigger cascading renders.
+    if (betAmount > maxBetAmount) {
+      const id = setTimeout(() => setBetAmount(maxBetAmount), 0);
+      return () => clearTimeout(id);
+    }
+  }, [maxBetAmount, user, betAmount]);
 
   useEffect(() => {
     async function fetch() {
@@ -125,6 +137,11 @@ export default function RaceDetailPage() {
   const handlePlaceBet = async () => {
     if (!isAuthenticated) {
       router.push('/login');
+      return;
+    }
+
+    if (betAmount > maxBetAmount) {
+      setBetResult({ success: false, message: `Số điểm cược tối đa là ${maxBetAmount.toLocaleString()} pts (70% số điểm hiện có).` });
       return;
     }
 
@@ -447,8 +464,9 @@ export default function RaceDetailPage() {
                     <input
                       type="number"
                       value={betAmount}
-                      onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                      min={10}
+                      onChange={e => setBetAmount(clampBetAmount(parseInt(e.target.value) || 0))}
+                      min={0}
+                      max={maxBetAmount}
                       className="w-full px-3 py-2.5 rounded-lg bg-bg-tertiary border border-border focus:border-accent-blue focus:outline-none text-lg font-bold tabular-nums"
                       id="bet-amount-input"
                     />
@@ -456,7 +474,7 @@ export default function RaceDetailPage() {
                       {[50, 100, 200, 500, 1000].map(v => (
                         <button
                           key={v}
-                          onClick={() => setBetAmount(v)}
+                          onClick={() => setBetAmount(clampBetAmount(v))}
                           className="flex-1 py-1 text-xs font-medium rounded bg-bg-tertiary hover:bg-bg-hover border border-border transition-colors"
                         >
                           {v}
@@ -473,8 +491,9 @@ export default function RaceDetailPage() {
                     } else if (selectedCategory === 'TRAINER_WIN' && selectedTrainer) {
                       const trainerEntries = entries.filter(e => e.trainerId?._id === selectedTrainer);
                       if (trainerEntries.length > 0) {
-                        const sumProbs = trainerEntries.reduce((sum, e) => sum + (1 / e.odd), 0);
-                        currentOdd = parseFloat((1 / sumProbs).toFixed(2));
+                        const totalUmaProb = entries.reduce((sum, e) => sum + (1 / e.odd), 0);
+                        const trainerTrueProb = trainerEntries.reduce((sum, e) => sum + ((1 / e.odd) / totalUmaProb), 0);
+                        currentOdd = parseFloat((1 / trainerTrueProb).toFixed(2));
                       }
                     } else if (selectedCategory === 'TRIFECTA' && trifecta.first && trifecta.second && trifecta.third) {
                       const firstOdd = entries.find(e => e.umaId._id === trifecta.first)?.odd || 0;
