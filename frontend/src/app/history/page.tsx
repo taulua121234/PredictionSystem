@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { betApi } from '@/services/api';
 import type { Bet } from '@/types';
 
@@ -68,6 +69,7 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Timer, Users, TrendingUp, Zap, ChevronRight } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { raceApi, leaderboardApi } from '@/services/api';
 import type { LeaderboardEntry } from '@/types';
 
@@ -184,6 +185,7 @@ export default function HomePage() {
           </aside>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

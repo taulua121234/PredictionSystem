@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { leaderboardApi } from '@/services/api';
 import type { LeaderboardEntry } from '@/types';
 
@@ -87,6 +88,7 @@ export default function LeaderboardPage() {
           ))}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

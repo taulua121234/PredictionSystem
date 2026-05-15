@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Timer, Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import UmaInfoPopup from '@/components/uma/UmaInfoPopup';
 import { raceApi, betApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -526,6 +527,7 @@ export default function RaceDetailPage() {
           </div>
         </div>
       </main>
+      <Footer />
 
       {/* Uma Info Popup */}
       <UmaInfoPopup
