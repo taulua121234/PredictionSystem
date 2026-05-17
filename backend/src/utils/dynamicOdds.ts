@@ -38,12 +38,12 @@ export type RaceBetStat = {
   percentage: number;
 };
 
-const MIN_ODD = 1.01;
+const MIN_ODD = 1.05;
 const TRIFECTA_HOUSE_EDGE_MULTIPLIER = 0.9;
 
 const DEFAULT_OPTIONS: Required<AdjustOddOptions> = {
   sensitivity: 0.5,
-  smoothing: 0.2,
+  smoothing: 0.15,
   minMultiplier: 0.5,
   maxMultiplier: 1.5,
 };

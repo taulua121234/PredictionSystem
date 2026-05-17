@@ -7,7 +7,6 @@ import { Transaction } from '../../models/Transaction';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
 import {
-  applyDynamicOddsToEntries,
   calculateRaceBetStats,
   calculateTrainerOdd,
   calculateTrifectaOdd,
@@ -136,37 +135,10 @@ export async function placeBet(req: Request, res: Response) {
       { session }
     );
 
-    let updatedEntries: ReturnType<typeof applyDynamicOddsToEntries> | null = null;
-    let updatedStats: ReturnType<typeof calculateRaceBetStats> | null = null;
-
-    if (betAmount > 0 && (category === 'UMA_WIN' || category === 'TRAINER_WIN')) {
-      const marketBets = await Bet.find({
-        raceId: race._id,
-        category: { $in: ['UMA_WIN', 'TRAINER_WIN'] },
-        status: { $ne: 'refunded' },
-      }).session(session).lean();
-
-      updatedEntries = applyDynamicOddsToEntries(race.entries, marketBets);
-      updatedStats = calculateRaceBetStats(race.entries, marketBets);
-      await race.save({ session });
-    }
-
     // 7. Commit
     await session.commitTransaction();
 
     logger.info(`Bet placed: ${user.username} -> ${betAmount} pts on ${category} (race: ${race.raceName})`);
-
-    if (updatedEntries && updatedStats) {
-      const raceIdString = race._id.toString();
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`race:${raceIdString}`).emit('bet:update', {
-          raceId: raceIdString,
-          entries: updatedEntries,
-          stats: updatedStats,
-        });
-      }
-    }
 
     respond.created(res, {
       bet: {
@@ -178,8 +150,6 @@ export async function placeBet(req: Request, res: Response) {
         status: bet.status,
       },
       currentPoints: user.currentPoints,
-      race: updatedEntries ? { entries: updatedEntries } : undefined,
-      stats: updatedStats || undefined,
     });
   } catch (err) {
     await session.abortTransaction();
