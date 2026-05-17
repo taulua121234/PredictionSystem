@@ -78,7 +78,7 @@ export default function AdminRacesPage() {
       closeBetTime: new Date(race.closeBetTime).toISOString().slice(0, 16),
       entries: race.entries.map(e => ({
         umaId: typeof e.umaId === 'string' ? e.umaId : e.umaId._id,
-        odd: e.odd
+        odd: e.baseOdd ?? e.odd
       }))
     });
     setShowForm(true);

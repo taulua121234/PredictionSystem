@@ -5,6 +5,8 @@ import { AxiosError } from 'axios';
 export interface RaceEntry {
   umaId: string | { _id: string; name: string; imageUrl?: string; infoImageUrl?: string };
   trainerId?: string | { _id: string; name: string; imageUrl?: string };
+  baseOdd?: number;
+  currentOdd?: number;
   odd: number;
 }
 

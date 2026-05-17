@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Timer, Info, Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -27,8 +27,25 @@ interface RaceData {
 interface PopulatedRaceEntry {
   umaId: { _id: string; name: string; imageUrl?: string; infoImageUrl?: string };
   trainerId?: { _id: string; name: string };
+  baseOdd?: number;
+  currentOdd?: number;
   odd: number;
 }
+
+interface OddUpdate {
+  umaId: string;
+  baseOdd: number;
+  currentOdd: number;
+  odd: number;
+}
+
+interface BetUpdatePayload {
+  raceId: string;
+  entries?: OddUpdate[];
+  stats?: BetStats;
+}
+
+const TRIFECTA_HOUSE_EDGE_MULTIPLIER = 0.9;
 
 export default function RaceDetailPage() {
   const params = useParams();
@@ -65,6 +82,23 @@ export default function RaceDetailPage() {
     }
   }, [maxBetAmount, user, betAmount]);
 
+  const applyOddUpdates = useCallback((updatedEntries: OddUpdate[]) => {
+    const updatesByUma = new Map(updatedEntries.map(entry => [entry.umaId, entry]));
+
+    setRace(prev => prev ? {
+      ...prev,
+      entries: prev.entries.map(entry => {
+        const update = updatesByUma.get(entry.umaId._id);
+        return update ? {
+          ...entry,
+          baseOdd: update.baseOdd,
+          currentOdd: update.currentOdd,
+          odd: update.odd,
+        } : entry;
+      }),
+    } : prev);
+  }, []);
+
   useEffect(() => {
     async function fetch() {
       try {
@@ -96,13 +130,21 @@ export default function RaceDetailPage() {
       }
     };
 
+    const handleBetUpdate = (data: BetUpdatePayload) => {
+      if (data.raceId !== raceIdToListen) return;
+      if (data.entries) applyOddUpdates(data.entries);
+      if (data.stats) setBetStats(data.stats);
+    };
+
     socket.on('race:update', handleRaceUpdate);
+    socket.on('bet:update', handleBetUpdate);
 
     return () => {
       socket.off('race:update', handleRaceUpdate);
+      socket.off('bet:update', handleBetUpdate);
       socket.emit('race:leave', raceIdToListen);
     };
-  }, [raceIdToListen]);
+  }, [raceIdToListen, applyOddUpdates]);
 
   useEffect(() => {
     if (!race || race.state !== 'BETTING_OPEN' || !race.closeBetTime) {
@@ -172,9 +214,13 @@ export default function RaceDetailPage() {
       updatePoints(data.currentPoints);
       setBetResult({ success: true, message: `Đặt cược thành công! Còn lại: ${data.currentPoints.toLocaleString()} pts` });
 
-      // Refresh stats
-      const statsRes = await betApi.raceStats(raceId);
-      setBetStats(statsRes.data.data);
+      if (data.race?.entries) applyOddUpdates(data.race.entries);
+      if (data.stats) {
+        setBetStats(data.stats);
+      } else {
+        const statsRes = await betApi.raceStats(raceId);
+        setBetStats(statsRes.data.data);
+      }
     } catch (err: unknown) {
       setBetResult({ success: false, message: getErrorMessage(err) });
     } finally {
@@ -496,11 +542,24 @@ export default function RaceDetailPage() {
                         currentOdd = parseFloat((1 / trainerTrueProb).toFixed(2));
                       }
                     } else if (selectedCategory === 'TRIFECTA' && trifecta.first && trifecta.second && trifecta.third) {
-                      const firstOdd = entries.find(e => e.umaId._id === trifecta.first)?.odd || 0;
-                      const secondOdd = entries.find(e => e.umaId._id === trifecta.second)?.odd || 0;
-                      const thirdOdd = entries.find(e => e.umaId._id === trifecta.third)?.odd || 0;
-                      if (firstOdd && secondOdd && thirdOdd) {
-                        currentOdd = parseFloat((firstOdd * secondOdd * thirdOdd * 12).toFixed(2));
+                      const firstEntry = entries.find(e => e.umaId._id === trifecta.first);
+                      const secondEntry = entries.find(e => e.umaId._id === trifecta.second);
+                      const thirdEntry = entries.find(e => e.umaId._id === trifecta.third);
+
+                      if (firstEntry && secondEntry && thirdEntry) {
+                        const totalUmaProb = entries.reduce((sum, e) => sum + (1 / e.odd), 0);
+                        const prob1 = (1 / firstEntry.odd) / totalUmaProb;
+                        const prob2 = (1 / secondEntry.odd) / totalUmaProb;
+                        const prob3 = (1 / thirdEntry.odd) / totalUmaProb;
+                        const secondDenominator = 1 - prob1;
+                        const thirdDenominator = 1 - prob1 - prob2;
+
+                        if (secondDenominator > 0 && thirdDenominator > 0) {
+                          const trifectaProb = prob1 * (prob2 / secondDenominator) * (prob3 / thirdDenominator);
+                          currentOdd = trifectaProb > 0
+                            ? parseFloat(((1 / trifectaProb) * TRIFECTA_HOUSE_EDGE_MULTIPLIER).toFixed(2))
+                            : 0;
+                        }
                       }
                     }
 

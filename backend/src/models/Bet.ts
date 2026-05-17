@@ -38,7 +38,7 @@ const betSchema = new Schema<IBet>(
       second: { type: Schema.Types.ObjectId, ref: 'Uma' },
       third: { type: Schema.Types.ObjectId, ref: 'Uma' },
     },
-    amount: { type: Number, required: true, min: 1 },
+    amount: { type: Number, required: true, min: 0 },
     oddAtBetTime: { type: Number, required: true, min: 1 },
     payout: { type: Number, default: 0 },
     status: {

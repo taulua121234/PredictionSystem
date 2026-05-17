@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Race } from '../../models/Race';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
+import { withDisplayOdds } from '../../utils/dynamicOdds';
 
 const logger = createLogger('races');
 
@@ -21,7 +22,7 @@ export async function listRaces(req: Request, res: Response) {
       .sort({ startTime: -1 })
       .lean();
 
-    respond.success(res, races);
+    respond.success(res, races.map(race => withDisplayOdds(race)));
   } catch (err) {
     logger.error('List races error:', err);
     respond.serverError(res, 'Failed to fetch races');
@@ -46,7 +47,7 @@ export async function getRaceById(req: Request, res: Response) {
       return respond.notFound(res, 'Race not found');
     }
 
-    respond.success(res, race);
+    respond.success(res, withDisplayOdds(race));
   } catch (err) {
     logger.error('Get race error:', err);
     respond.serverError(res, 'Failed to fetch race');

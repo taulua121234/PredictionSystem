@@ -11,6 +11,7 @@ import { Bet } from '../../models/Bet';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
 import cloudinary from '../../utils/cloudinary';
+import { normalizeEntriesForAdmin } from '../../utils/dynamicOdds';
 
 const logger = createLogger('admin');
 
@@ -53,7 +54,7 @@ async function populateTrainerIdForEntries(entries: any[]) {
       }
     }
   }
-  return entries;
+  return normalizeEntriesForAdmin(entries);
 }
 
 /**

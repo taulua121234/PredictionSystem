@@ -1,11 +1,14 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { normalizeEntryOdds } from '../utils/dynamicOdds';
 
 export type RaceState = 'UPCOMING' | 'BETTING_OPEN' | 'LOCKED' | 'FINISHED' | 'SETTLED' | 'CANCELLED';
 
 export interface IRaceEntry {
   umaId: mongoose.Types.ObjectId;
   trainerId?: mongoose.Types.ObjectId;
-  odd: number;
+  baseOdd?: number;
+  currentOdd?: number;
+  odd?: number;
 }
 
 export interface IRaceResult {
@@ -31,7 +34,9 @@ const raceEntrySchema = new Schema<IRaceEntry>(
   {
     umaId: { type: Schema.Types.ObjectId, ref: 'Uma', required: true },
     trainerId: { type: Schema.Types.ObjectId, ref: 'Trainer' },
-    odd: { type: Number, required: true, min: 1.01 },
+    baseOdd: { type: Number, min: 1.01 },
+    currentOdd: { type: Number, min: 1.01 },
+    odd: { type: Number, min: 1.01 },
   },
   { _id: false }
 );
@@ -65,5 +70,10 @@ const raceSchema = new Schema<IRace>(
 );
 
 raceSchema.index({ state: 1, startTime: 1 });
+
+raceSchema.pre('validate', function normalizeRaceEntryOdds(next) {
+  this.entries.forEach(entry => normalizeEntryOdds(entry));
+  next();
+});
 
 export const Race = mongoose.model<IRace>('Race', raceSchema);

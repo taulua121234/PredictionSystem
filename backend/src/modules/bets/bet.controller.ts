@@ -6,6 +6,14 @@ import { BettingUser } from '../../models/User';
 import { Transaction } from '../../models/Transaction';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
+import {
+  applyDynamicOddsToEntries,
+  calculateRaceBetStats,
+  calculateTrainerOdd,
+  calculateTrifectaOdd,
+  getCurrentOdd,
+  normalizeEntryOdds,
+} from '../../utils/dynamicOdds';
 
 const logger = createLogger('bets');
 
@@ -43,6 +51,7 @@ export async function placeBet(req: Request, res: Response) {
       await session.abortTransaction();
       return respond.badRequest(res, `Betting is not open. Current state: ${race.state}`);
     }
+    race.entries.forEach(entry => normalizeEntryOdds(entry));
 
     // 2. Find the odd for this prediction
     let oddAtBetTime = 1;
@@ -52,16 +61,14 @@ export async function placeBet(req: Request, res: Response) {
         await session.abortTransaction();
         return respond.badRequest(res, 'Selected Uma is not in this race');
       }
-      oddAtBetTime = entry.odd;
+      oddAtBetTime = getCurrentOdd(entry);
     } else if (category === 'TRAINER_WIN' && prediction.trainerId) {
       const trainerEntries = race.entries.filter(e => e.trainerId?.toString() === prediction.trainerId);
       if (trainerEntries.length === 0) {
         await session.abortTransaction();
         return respond.badRequest(res, 'Selected Trainer is not in this race');
       }
-      const totalUmaProb = race.entries.reduce((sum, e) => sum + (1 / e.odd), 0);
-      const trainerTrueProb = trainerEntries.reduce((sum, e) => sum + ((1 / e.odd) / totalUmaProb), 0);
-      oddAtBetTime = parseFloat((1 / trainerTrueProb).toFixed(2));
+      oddAtBetTime = calculateTrainerOdd(race.entries, prediction.trainerId);
     } else if (category === 'TRIFECTA' && prediction.first && prediction.second && prediction.third) {
       const firstEntry = race.entries.find(e => e.umaId.toString() === prediction.first);
       const secondEntry = race.entries.find(e => e.umaId.toString() === prediction.second);
@@ -71,9 +78,7 @@ export async function placeBet(req: Request, res: Response) {
         await session.abortTransaction();
         return respond.badRequest(res, 'One or more selected Umas are not in this race');
       }
-      
-      const combinedOdd = firstEntry.odd * secondEntry.odd * thirdEntry.odd * 12;
-      oddAtBetTime = parseFloat(combinedOdd.toFixed(2));
+      oddAtBetTime = calculateTrifectaOdd(race.entries, prediction.first, prediction.second, prediction.third);
     } else {
       await session.abortTransaction();
       return respond.badRequest(res, 'Invalid category or prediction');
@@ -131,10 +136,37 @@ export async function placeBet(req: Request, res: Response) {
       { session }
     );
 
+    let updatedEntries: ReturnType<typeof applyDynamicOddsToEntries> | null = null;
+    let updatedStats: ReturnType<typeof calculateRaceBetStats> | null = null;
+
+    if (betAmount > 0 && (category === 'UMA_WIN' || category === 'TRAINER_WIN')) {
+      const marketBets = await Bet.find({
+        raceId: race._id,
+        category: { $in: ['UMA_WIN', 'TRAINER_WIN'] },
+        status: { $ne: 'refunded' },
+      }).session(session).lean();
+
+      updatedEntries = applyDynamicOddsToEntries(race.entries, marketBets);
+      updatedStats = calculateRaceBetStats(race.entries, marketBets);
+      await race.save({ session });
+    }
+
     // 7. Commit
     await session.commitTransaction();
 
     logger.info(`Bet placed: ${user.username} -> ${betAmount} pts on ${category} (race: ${race.raceName})`);
+
+    if (updatedEntries && updatedStats) {
+      const raceIdString = race._id.toString();
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`race:${raceIdString}`).emit('bet:update', {
+          raceId: raceIdString,
+          entries: updatedEntries,
+          stats: updatedStats,
+        });
+      }
+    }
 
     respond.created(res, {
       bet: {
@@ -146,6 +178,8 @@ export async function placeBet(req: Request, res: Response) {
         status: bet.status,
       },
       currentPoints: user.currentPoints,
+      race: updatedEntries ? { entries: updatedEntries } : undefined,
+      stats: updatedStats || undefined,
     });
   } catch (err) {
     await session.abortTransaction();
@@ -191,29 +225,18 @@ export async function getRaceBetStats(req: Request, res: Response) {
   try {
     const { raceId } = req.params;
 
-    // Aggregate bet amounts per uma for UMA_WIN category
-    const umaStats = await Bet.aggregate([
-      { $match: { raceId: new mongoose.Types.ObjectId(raceId as string), category: 'UMA_WIN' } },
-      {
-        $group: {
-          _id: '$prediction.umaId',
-          totalAmount: { $sum: '$amount' },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { totalAmount: -1 } },
-    ]);
+    const race = await Race.findById(raceId).lean();
+    if (!race) {
+      return respond.notFound(res, 'Race not found');
+    }
 
-    const totalBetAmount = umaStats.reduce((sum, s) => sum + s.totalAmount, 0);
+    const marketBets = await Bet.find({
+      raceId: new mongoose.Types.ObjectId(raceId as string),
+      category: { $in: ['UMA_WIN', 'TRAINER_WIN'] },
+      status: { $ne: 'refunded' },
+    }).lean();
 
-    const predictions = umaStats.map(s => ({
-      umaId: s._id,
-      totalAmount: s.totalAmount,
-      betCount: s.count,
-      percentage: totalBetAmount > 0 ? Math.round((s.totalAmount / totalBetAmount) * 100) : 0,
-    }));
-
-    respond.success(res, { predictions, totalBetAmount });
+    respond.success(res, calculateRaceBetStats(race.entries, marketBets));
   } catch (err) {
     logger.error('Race bet stats error:', err);
     respond.serverError(res, 'Failed to fetch bet stats');
