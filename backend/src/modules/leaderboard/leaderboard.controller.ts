@@ -7,6 +7,20 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger('leaderboard');
 
 /**
+ * GET /leaderboard/stats
+ * Public aggregate numbers for homepage summary badges
+ */
+export async function getLeaderboardStats(_req: Request, res: Response) {
+  try {
+    const totalPlayers = await BettingUser.countDocuments({ role: 'user' });
+    respond.success(res, { totalPlayers });
+  } catch (err) {
+    logger.error('Leaderboard stats error:', err);
+    respond.serverError(res, 'Failed to fetch leaderboard stats');
+  }
+}
+
+/**
  * GET /leaderboard/income
  * Leaderboard ranked by income (currentPoints - startingPoints)
  */

@@ -71,6 +71,7 @@ export const leaderboardApi = {
   income: (limit = 20) => api.get('/leaderboard/income', { params: { limit } }),
   roi: (limit = 20) => api.get('/leaderboard/roi', { params: { limit } }),
   points: (limit = 20) => api.get('/leaderboard/points', { params: { limit } }),
+  stats: () => api.get('/leaderboard/stats'),
 };
 
 // ==================== Uma API ====================

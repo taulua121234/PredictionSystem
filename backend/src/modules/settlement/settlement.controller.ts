@@ -7,6 +7,7 @@ import { Transaction } from '../../models/Transaction';
 import { calculatePayout } from '../../utils/pointsCalculator';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
+import { sendUserPointUpdate } from '../websocket/socketHandler';
 
 const logger = createLogger('settlement');
 
@@ -42,6 +43,7 @@ export async function settleRace(req: Request, res: Response) {
 
     let totalPaidOut = 0;
     let winnersCount = 0;
+    const pointUpdates = new Map<string, number>();
 
     for (const bet of bets) {
       let isWinner = false;
@@ -71,6 +73,7 @@ export async function settleRace(req: Request, res: Response) {
           user.currentPoints += payout;
           user.totalPayout += payout;
           await user.save({ session });
+          pointUpdates.set(user._id.toString(), user.currentPoints);
 
           // Create payout transaction
           await Transaction.create(
@@ -101,6 +104,13 @@ export async function settleRace(req: Request, res: Response) {
     await race.save({ session });
 
     await session.commitTransaction();
+
+    const io = req.app.get('io');
+    if (io) {
+      pointUpdates.forEach((currentPoints, userId) => {
+        sendUserPointUpdate(io, userId, currentPoints);
+      });
+    }
 
     logger.info(`Race settled: ${race.raceName} — ${winnersCount} winners, ${totalPaidOut} points paid`);
 

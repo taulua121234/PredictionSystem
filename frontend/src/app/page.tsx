@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Timer, Users, TrendingUp, Zap, ChevronRight } from 'lucide-react';
+import { Timer, Users, TrendingUp, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { raceApi, leaderboardApi } from '@/services/api';
@@ -25,22 +25,29 @@ const STATE_CONFIG: Record<string, { label: string; color: string; bg: string }>
   LOCKED: { label: '🔒 Đã khóa', color: 'text-accent-yellow', bg: 'bg-accent-yellow/10' },
   FINISHED: { label: 'Đã kết thúc', color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
   SETTLED: { label: '✅ Đã thanh toán', color: 'text-text-muted', bg: 'bg-bg-tertiary' },
+  CANCELLED: { label: 'Đã hủy', color: 'text-accent-red', bg: 'bg-accent-red/10' },
 };
+
+const PAST_RACES_PER_PAGE = 5;
 
 export default function HomePage() {
   const [races, setRaces] = useState<Race[]>([]);
   const [topPlayers, setTopPlayers] = useState<LeaderboardEntry[]>([]);
+  const [playerCount, setPlayerCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [pastPage, setPastPage] = useState(1);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [racesRes, leaderboardRes] = await Promise.all([
+        const [racesRes, leaderboardRes, statsRes] = await Promise.all([
           raceApi.list(),
           leaderboardApi.income(5),
+          leaderboardApi.stats(),
         ]);
         setRaces(racesRes.data.data || []);
         setTopPlayers(leaderboardRes.data.data || []);
+        setPlayerCount(statsRes.data.data?.totalPlayers || 0);
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -52,7 +59,13 @@ export default function HomePage() {
 
   const activeRaces = races.filter(r => r.state === 'BETTING_OPEN' || r.state === 'LOCKED');
   const upcomingRaces = races.filter(r => r.state === 'UPCOMING');
-  const pastRaces = races.filter(r => r.state === 'FINISHED' || r.state === 'SETTLED');
+  const pastRaces = races.filter(r => r.state === 'FINISHED' || r.state === 'SETTLED' || r.state === 'CANCELLED');
+  const pastPageCount = Math.max(1, Math.ceil(pastRaces.length / PAST_RACES_PER_PAGE));
+  const safePastPage = Math.min(pastPage, pastPageCount);
+  const paginatedPastRaces = pastRaces.slice(
+    (safePastPage - 1) * PAST_RACES_PER_PAGE,
+    safePastPage * PAST_RACES_PER_PAGE
+  );
 
   return (
     <div className="min-h-screen bg-bg-primary">
@@ -82,7 +95,7 @@ export default function HomePage() {
                 <div className="flex gap-3">
                   <StatBadge icon={<Zap size={14} />} label="Live Races" value={activeRaces.length.toString()} color="text-accent-green" />
                   <StatBadge icon={<Timer size={14} />} label="Upcoming" value={upcomingRaces.length.toString()} color="text-accent-blue" />
-                  <StatBadge icon={<Users size={14} />} label="Players" value={topPlayers.length > 0 ? '...' : '0'} color="text-accent-yellow" />
+                  <StatBadge icon={<Users size={14} />} label="Players" value={playerCount.toLocaleString()} color="text-accent-yellow" />
                 </div>
               </div>
             </motion.div>
@@ -113,10 +126,18 @@ export default function HomePage() {
             {pastRaces.length > 0 && (
               <Section title="📊 Đã kết thúc" count={pastRaces.length}>
                 <div className="grid gap-3">
-                  {pastRaces.slice(0, 5).map((race, i) => (
+                  {paginatedPastRaces.map((race, i) => (
                     <RaceCard key={race._id} race={race} index={i} />
                   ))}
                 </div>
+                {pastPageCount > 1 && (
+                  <Pagination
+                    page={safePastPage}
+                    pageCount={pastPageCount}
+                    onPrev={() => setPastPage(page => Math.max(1, page - 1))}
+                    onNext={() => setPastPage(page => Math.min(pastPageCount, page + 1))}
+                  />
+                )}
               </Section>
             )}
 
@@ -200,6 +221,44 @@ function Section({ title, count, children }: { title: string; count: number; chi
         <span className="text-xs bg-bg-tertiary text-text-secondary px-2 py-0.5 rounded-full">{count}</span>
       </h2>
       {children}
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  pageCount,
+  onPrev,
+  onNext,
+}: {
+  page: number;
+  pageCount: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3">
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={page === 1}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-tertiary disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <ChevronLeft size={16} />
+        Trước
+      </button>
+      <span className="text-sm text-text-muted">
+        Trang <span className="font-semibold text-text-primary">{page}</span> / {pageCount}
+      </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={page === pageCount}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-tertiary disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Sau
+        <ChevronRight size={16} />
+      </button>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Coins, Edit2, History, Home, LogOut, Shield, Trophy } from 'lucide-react';
 import RenameModal from '@/components/RenameModal';
-import { getSocket } from '@/socket/socketClient';
+import { disconnectSocket, getSocket } from '@/socket/socketClient';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function Header() {
@@ -31,6 +31,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
+    disconnectSocket();
     router.push('/login');
   };
 

@@ -57,14 +57,29 @@ export interface BettingUser {
   isLocked?: boolean;
 }
 
+export interface NamedEntity {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+}
+
+export interface BetPredictionDetail {
+  umaId?: string | NamedEntity;
+  trainerId?: string | NamedEntity;
+  first?: string | NamedEntity;
+  second?: string | NamedEntity;
+  third?: string | NamedEntity;
+}
+
 export interface Bet {
   _id: string;
   raceId: { raceName: string; state: string } | string;
   category: string;
-  prediction: Record<string, string>;
+  prediction: BetPredictionDetail;
   amount: number;
   oddAtBetTime: number;
   payout: number;
+  potentialPayout?: number;
   status: 'pending' | 'won' | 'lost' | 'refunded';
   createdAt: string;
 }

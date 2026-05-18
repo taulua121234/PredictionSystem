@@ -27,6 +27,12 @@ const STATE_COLORS: Record<string, string> = {
   CANCELLED: 'text-accent-red',
 };
 
+const toDateTimeLocalValue = (value: string) => {
+  const date = new Date(value);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+};
+
 export default function AdminRacesPage() {
   const [races, setRaces] = useState<Race[]>([]);
   const [umas, setUmas] = useState<Uma[]>([]);
@@ -74,8 +80,8 @@ export default function AdminRacesPage() {
     setForm({
       raceName: race.raceName,
       description: race.description || '',
-      startTime: new Date(race.startTime).toISOString().slice(0, 16),
-      closeBetTime: new Date(race.closeBetTime).toISOString().slice(0, 16),
+      startTime: toDateTimeLocalValue(race.startTime),
+      closeBetTime: toDateTimeLocalValue(race.closeBetTime),
       entries: race.entries.map(e => ({
         umaId: typeof e.umaId === 'string' ? e.umaId : e.umaId._id,
         odd: e.baseOdd ?? e.odd

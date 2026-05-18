@@ -6,6 +6,7 @@ import { BettingUser } from '../../models/User';
 import { Transaction } from '../../models/Transaction';
 import * as respond from '../../utils/responseHelper';
 import { createLogger } from '../../utils/logger';
+import { calculatePayout } from '../../utils/pointsCalculator';
 import {
   calculateRaceBetStats,
   calculateTrainerOdd,
@@ -173,6 +174,11 @@ export async function getBetHistory(req: Request, res: Response) {
     const [bets, total] = await Promise.all([
       Bet.find({ userId })
         .populate('raceId', 'raceName state')
+        .populate('prediction.umaId', 'name imageUrl')
+        .populate('prediction.trainerId', 'name imageUrl')
+        .populate('prediction.first', 'name imageUrl')
+        .populate('prediction.second', 'name imageUrl')
+        .populate('prediction.third', 'name imageUrl')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -180,7 +186,14 @@ export async function getBetHistory(req: Request, res: Response) {
       Bet.countDocuments({ userId }),
     ]);
 
-    respond.paginated(res, bets, total, page, limit);
+    const betsWithPotentialPayout = bets.map(bet => ({
+      ...bet,
+      potentialPayout: bet.status === 'pending'
+        ? calculatePayout(bet.amount, bet.oddAtBetTime)
+        : undefined,
+    }));
+
+    respond.paginated(res, betsWithPotentialPayout, total, page, limit);
   } catch (err) {
     logger.error('Bet history error:', err);
     respond.serverError(res, 'Failed to fetch bet history');

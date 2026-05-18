@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Ticket, Loader2, Shield } from 'lucide-react';
 import { authApi } from '@/services/api';
+import { reconnectSocket } from '@/socket/socketClient';
 import { useAuthStore } from '@/stores/authStore';
 import { getErrorMessage } from '@/types';
 
@@ -26,6 +27,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.loginWithTicket(ticketCode.trim());
       login(res.data.data.token, res.data.data.user);
+      reconnectSocket();
       router.push('/');
     } catch (err: unknown) {
       setError(getErrorMessage(err));
@@ -42,6 +44,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.loginAdmin(adminUser, adminPass);
       login(res.data.data.token, res.data.data.user);
+      reconnectSocket();
       router.push('/admin');
     } catch (err: unknown) {
       setError(getErrorMessage(err));

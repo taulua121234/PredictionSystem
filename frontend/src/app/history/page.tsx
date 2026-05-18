@@ -15,6 +15,35 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; labe
   refunded: { icon: <RotateCcw size={14} />, color: 'text-accent-blue', label: 'Hoàn' },
 };
 
+const getPotentialPayout = (bet: Bet) =>
+  bet.potentialPayout ?? Math.round(bet.amount * bet.oddAtBetTime);
+
+const getPredictionName = (value: Bet['prediction'][keyof Bet['prediction']]) => {
+  if (!value) return 'Chưa rõ';
+  if (typeof value === 'string') return 'Chưa rõ';
+  return value.name;
+};
+
+const getPredictionDetails = (bet: Bet) => {
+  if (bet.category === 'UMA_WIN') {
+    return [{ label: 'Uma', value: getPredictionName(bet.prediction.umaId) }];
+  }
+
+  if (bet.category === 'TRAINER_WIN') {
+    return [{ label: 'Trainer', value: getPredictionName(bet.prediction.trainerId) }];
+  }
+
+  if (bet.category === 'TRIFECTA') {
+    return [
+      { label: 'Top 1', value: getPredictionName(bet.prediction.first) },
+      { label: 'Top 2', value: getPredictionName(bet.prediction.second) },
+      { label: 'Top 3', value: getPredictionName(bet.prediction.third) },
+    ];
+  }
+
+  return [];
+};
+
 export default function HistoryPage() {
   const [bets, setBets] = useState<Bet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +69,8 @@ export default function HistoryPage() {
           <div className="space-y-3">
             {bets.map((bet, i) => {
               const cfg = STATUS_CONFIG[bet.status] || STATUS_CONFIG.pending;
+              const potentialPayout = getPotentialPayout(bet);
+              const predictionDetails = getPredictionDetails(bet);
               return (
                 <motion.div key={bet._id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
                   className="glass rounded-xl p-4 hover:border-border-light transition-all">
@@ -52,6 +83,16 @@ export default function HistoryPage() {
                       {cfg.icon} {cfg.label}
                     </div>
                   </div>
+                  {predictionDetails.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {predictionDetails.map(detail => (
+                        <div key={detail.label} className="rounded-lg border border-border bg-bg-tertiary/60 px-2.5 py-1.5 text-xs">
+                          <span className="text-text-muted">{detail.label}: </span>
+                          <span className="font-semibold text-text-primary">{detail.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <div className="text-sm">
                       <span className="text-text-muted">Cược: </span>
@@ -61,6 +102,12 @@ export default function HistoryPage() {
                     </div>
                     {bet.status === 'won' && (
                       <span className="text-accent-green font-bold text-sm">+{bet.payout.toLocaleString()} pts</span>
+                    )}
+                    {bet.status === 'pending' && (
+                      <div className="text-right">
+                        <p className="text-[11px] text-text-muted">Tiềm năng</p>
+                        <span className="text-accent-yellow font-bold text-sm">+{potentialPayout.toLocaleString()} pts</span>
+                      </div>
                     )}
                   </div>
                 </motion.div>
