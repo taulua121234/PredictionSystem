@@ -5,13 +5,16 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Coins, Edit2, History, Home, LogOut, Shield, Trophy } from 'lucide-react';
 import RenameModal from '@/components/RenameModal';
+import TourGuide from '@/components/TourGuide';
 import { disconnectSocket, getSocket } from '@/socket/socketClient';
 import { useAuthStore } from '@/stores/authStore';
+import { useTourStore } from '@/stores/tourStore';
 
 export default function Header() {
   const { user, isAuthenticated, logout, updatePoints } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const { hasCompletedTour, startTour } = useTourStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -44,7 +47,7 @@ export default function Header() {
             <span className="text-lg font-bold text-gradient hidden sm:inline">Uma Betting</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1" data-tour="nav-tabs">
             <NavLink href="/" label="Races" />
             <NavLink href="/leaderboard" label="Leaderboard" icon={<Trophy size={16} />} />
             {isAuthenticated && <NavLink href="/history" label="History" icon={<History size={16} />} />}
@@ -54,14 +57,14 @@ export default function Header() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated && user ? (
               <>
-                <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-bg-tertiary border border-border">
+                <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-bg-tertiary border border-border" data-tour="points-display">
                   <Coins size={16} className="text-accent-yellow" />
                   <span className="font-bold text-accent-yellow tabular-nums text-sm sm:text-base">
                     {(user.currentPoints || 0).toLocaleString()}
                   </span>
                 </div>
 
-                <div className="relative">
+                <div className="relative" data-tour="user-menu">
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
                     className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-bg-hover transition-colors touch-target"
@@ -128,7 +131,17 @@ export default function Header() {
       </nav>
 
       <RenameModal isOpen={isRenameOpen} onClose={() => setIsRenameOpen(false)} />
-      {isAuthenticated && user && user.hasChangedName === false && <RenameModal isOpen={true} />}
+      {isAuthenticated && user && user.hasChangedName === false && (
+        <RenameModal
+          isOpen={true}
+          onClose={() => {
+            if (!hasCompletedTour) {
+              setTimeout(() => startTour(), 500);
+            }
+          }}
+        />
+      )}
+      <TourGuide />
     </>
   );
 }

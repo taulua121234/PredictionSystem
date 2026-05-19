@@ -74,7 +74,7 @@ export default function HomePage() {
       <main className="max-w-[1600px] mx-auto px-3 sm:px-4 py-6 pb-24 md:pb-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* Main Content */}
-          <div className="space-y-6">
+          <div className="space-y-6" data-tour="active-races">
             {/* Hero Banner */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -158,7 +158,7 @@ export default function HomePage() {
           </div>
 
           {/* Sidebar — Leaderboard Preview */}
-          <aside className="space-y-4">
+          <aside className="space-y-4" data-tour="leaderboard-preview">
             <div className="glass rounded-2xl p-4 sticky top-20">
               <h2 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
                 <TrendingUp size={14} className="text-accent-yellow" />

@@ -28,10 +28,12 @@ export default function RenameModal({ onClose, isOpen }: Props) {
     setError('');
     try {
       const res = await authApi.rename(name);
+      // Call onClose before updateUser so the tour can start before
+      // hasChangedName=true unmounts this component
+      if (onClose) onClose();
       if (user) {
         updateUser({ username: res.username, hasChangedName: res.hasChangedName });
       }
-      if (onClose) onClose();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
