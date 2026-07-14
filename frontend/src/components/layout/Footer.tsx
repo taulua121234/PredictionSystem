@@ -24,7 +24,7 @@ export default function Footer() {
           <div className="pt-6 border-t border-border/50 w-full flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] sm:text-xs text-text-muted uppercase tracking-widest">
             <div className="flex items-center gap-2">
               <span className="text-lg">🏇</span>
-              <span className="font-bold">Uma Betting Platform</span>
+              <span className="font-bold">Uma Prediction Platform</span>
             </div>
             
             <div className="flex items-center gap-6">

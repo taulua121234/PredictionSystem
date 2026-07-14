@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { loginWithTicket, loginAdmin, getMe, renameUser } from './auth.controller';
 import { authenticate, asyncHandler } from '../../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/login-ticket', asyncHandler(loginWithTicket));
 router.post('/login-admin', asyncHandler(loginAdmin));

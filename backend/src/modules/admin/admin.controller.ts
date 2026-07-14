@@ -182,7 +182,7 @@ export async function deleteRace(req: Request, res: Response) {
 
     const betCount = await Bet.countDocuments({ raceId: race._id });
     if (betCount > 0) {
-      return respond.badRequest(res, 'Không thể xóa race đã có người đặt cược. Hãy dùng chức năng Hủy Race để hoàn điểm.');
+      return respond.badRequest(res, 'Không thể xóa race đã có người dự đoán. Hãy dùng chức năng Hủy Race để hoàn điểm.');
     }
 
     await Race.findByIdAndDelete(race._id);
@@ -252,7 +252,7 @@ export async function cancelRace(req: Request, res: Response) {
 
     logger.info(`Race cancelled: ${race.raceName}. Refunded ${refundedCount} bets, total ${totalRefunded} points`);
     respond.success(res, { 
-      message: `Đã hủy race và hoàn ${totalRefunded.toLocaleString()} điểm cho ${refundedCount} lượt cược`,
+      message: `Đã hủy race và hoàn ${totalRefunded.toLocaleString()} điểm cho ${refundedCount} lượt dự đoán`,
       refundedCount,
       totalRefunded,
     });

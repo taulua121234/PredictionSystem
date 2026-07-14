@@ -44,7 +44,7 @@ export default function Header() {
         <div className="max-w-[1600px] mx-auto px-3 sm:px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <span className="text-2xl">🏇</span>
-            <span className="text-lg font-bold text-gradient hidden sm:inline">Uma Betting</span>
+            <span className="text-lg font-bold text-gradient hidden sm:inline">Uma Prediction</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1" data-tour="nav-tabs">

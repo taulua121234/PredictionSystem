@@ -70,7 +70,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-5xl block mb-3">🏇</span>
-          <h1 className="text-3xl font-bold text-gradient mb-2">Uma Betting</h1>
+          <h1 className="text-3xl font-bold text-gradient mb-2">Uma Prediction</h1>
           <p className="text-text-secondary text-sm">Umamusume Prediction Platform</p>
         </div>
 

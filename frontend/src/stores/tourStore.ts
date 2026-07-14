@@ -18,13 +18,13 @@ export const TOUR_STEPS = [
   {
     targetSelector: '[data-tour="nav-tabs"]',
     title: '📍 Điều hướng',
-    description: 'Đây là thanh điều hướng chính. Bạn có thể di chuyển giữa các trang: Races (danh sách các cuộc đua), Leaderboard (bảng xếp hạng), và History (lịch sử cược của bạn).',
+    description: 'Đây là thanh điều hướng chính. Bạn có thể di chuyển giữa các trang: Races (danh sách các cuộc đua), Leaderboard (bảng xếp hạng), và History (lịch sử dự đoán của bạn).',
     position: 'bottom' as const,
   },
   {
     targetSelector: '[data-tour="leaderboard-preview"]',
     title: '🏆 Bảng xếp hạng',
-    description: 'Đây là bảng xếp hạng Top Players. Có 3 tab xếp hạng:\n• Income — Xếp theo lợi nhuận ròng (điểm kiếm được trừ đi điểm đặt cược)\n• ROI — Xếp theo tỷ suất lợi nhuận (% hiệu quả đầu tư)\n• Points — Xếp theo tổng điểm hiện có',
+    description: 'Đây là bảng xếp hạng Top Players. Có 3 tab xếp hạng:\n• Income — Xếp theo lợi nhuận ròng (điểm kiếm được trừ đi điểm dự đoán)\n• ROI — Xếp theo tỷ suất lợi nhuận (% hiệu quả đầu tư)\n• Points — Xếp theo tổng điểm hiện có',
     position: 'left' as const,
   },
   {
@@ -36,13 +36,13 @@ export const TOUR_STEPS = [
   {
     targetSelector: '[data-tour="points-display"]',
     title: '💰 Điểm của bạn',
-    description: 'Đây là số điểm hiện tại của bạn. Bạn sẽ sử dụng điểm này để đặt cược. Lưu ý: mỗi lần cược tối đa 70% số điểm hiện có.',
+    description: 'Đây là số điểm hiện tại của bạn. Bạn sẽ sử dụng điểm này để dự đoán. Lưu ý: mỗi lần dự đoán tối đa 70% số điểm hiện có.',
     position: 'bottom' as const,
   },
   {
     targetSelector: '[data-tour="active-races"]',
-    title: '🎯 Cách đặt cược',
-    description: 'Để đặt cược, click vào một cuộc đua đang mở (🔥 Đang mở cược). Trong trang chi tiết race:\n\n1. Chọn loại cược: Uma Win (dự đoán Uma chiến thắng), Trainer Win (dự đoán Trainer chiến thắng), hoặc Trifecta (dự đoán top 3)\n2. Chọn Uma/Trainer bạn muốn cược\n3. Nhập số điểm cược\n4. Bấm "Đặt cược" để xác nhận\n\nOdds càng cao = thắng càng nhiều nhưng xác suất thấp hơn!',
+    title: '🎯 Cách dự đoán',
+    description: 'Để dự đoán, click vào một cuộc đua đang mở (🔥 Đang mở dự đoán). Trong trang chi tiết race:\n\n1. Chọn hạng mục dự đoán: Uma Win (dự đoán Uma chiến thắng), Trainer Win (dự đoán Trainer chiến thắng), hoặc Trifecta (dự đoán top 3)\n2. Chọn Uma/Trainer bạn muốn dự đoán\n3. Nhập số điểm dự đoán\n4. Bấm "Dự đoán" để xác nhận\n\nOdds càng cao = thắng càng nhiều nhưng xác suất thấp hơn!',
     position: 'bottom' as const,
   },
 ];

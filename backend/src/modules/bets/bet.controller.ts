@@ -38,7 +38,7 @@ export async function placeBet(req: Request, res: Response) {
     const betAmount = Number(amount);
     if (!Number.isFinite(betAmount) || betAmount < 0) {
       await session.abortTransaction();
-      return respond.badRequest(res, 'Bet amount must be 0 points or more');
+      return respond.badRequest(res, 'Prediction amount must be 0 points or more');
     }
 
     // 1. Check race state
@@ -49,7 +49,7 @@ export async function placeBet(req: Request, res: Response) {
     }
     if (race.state !== 'BETTING_OPEN') {
       await session.abortTransaction();
-      return respond.badRequest(res, `Betting is not open. Current state: ${race.state}`);
+      return respond.badRequest(res, `Prediction is not open. Current state: ${race.state}`);
     }
     race.entries.forEach(entry => normalizeEntryOdds(entry));
 
@@ -93,7 +93,7 @@ export async function placeBet(req: Request, res: Response) {
     const maxBetAmount = Math.floor(user.currentPoints * 0.7);
     if (betAmount > maxBetAmount) {
       await session.abortTransaction();
-      return respond.badRequest(res, `Maximum bet is ${maxBetAmount} points (70% of current points)`);
+      return respond.badRequest(res, `Maximum prediction is ${maxBetAmount} points (70% of current points)`);
     }
     if (user.currentPoints < betAmount) {
       await session.abortTransaction();
@@ -155,7 +155,7 @@ export async function placeBet(req: Request, res: Response) {
   } catch (err) {
     await session.abortTransaction();
     logger.error('Place bet error:', err);
-    respond.serverError(res, 'Failed to place bet');
+    respond.serverError(res, 'Failed to place prediction');
   } finally {
     session.endSession();
   }
@@ -196,7 +196,7 @@ export async function getBetHistory(req: Request, res: Response) {
     respond.paginated(res, betsWithPotentialPayout, total, page, limit);
   } catch (err) {
     logger.error('Bet history error:', err);
-    respond.serverError(res, 'Failed to fetch bet history');
+    respond.serverError(res, 'Failed to fetch prediction history');
   }
 }
 
@@ -222,6 +222,6 @@ export async function getRaceBetStats(req: Request, res: Response) {
     respond.success(res, calculateRaceBetStats(race.entries, marketBets));
   } catch (err) {
     logger.error('Race bet stats error:', err);
-    respond.serverError(res, 'Failed to fetch bet stats');
+    respond.serverError(res, 'Failed to fetch prediction stats');
   }
 }

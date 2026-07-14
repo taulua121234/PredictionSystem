@@ -9,7 +9,7 @@ import {
   getDashboardStats,
 } from './admin.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // All admin routes require authentication + admin role
 router.use(authenticate, adminOnly);

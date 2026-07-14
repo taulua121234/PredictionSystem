@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { placeBet, getBetHistory, getRaceBetStats } from './bet.controller';
 import { authenticate, asyncHandler } from '../../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/place', authenticate, asyncHandler(placeBet));
 router.get('/history', authenticate, asyncHandler(getBetHistory));

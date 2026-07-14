@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Uma Betting | Umamusume Prediction Platform",
+  title: "Uma Prediction | Umamusume Prediction Platform",
   description: "Predict race outcomes, earn points, and compete on the leaderboard in real-time",
 };
 

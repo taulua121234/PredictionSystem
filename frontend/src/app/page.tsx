@@ -21,7 +21,7 @@ interface Race {
 
 const STATE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   UPCOMING: { label: 'Sắp diễn ra', color: 'text-text-secondary', bg: 'bg-bg-hover' },
-  BETTING_OPEN: { label: '🔥 Đang mở cược', color: 'text-accent-green', bg: 'bg-accent-green/10' },
+  BETTING_OPEN: { label: '🔥 Đang mở dự đoán', color: 'text-accent-green', bg: 'bg-accent-green/10' },
   LOCKED: { label: '🔒 Đã khóa', color: 'text-accent-yellow', bg: 'bg-accent-yellow/10' },
   FINISHED: { label: 'Đã kết thúc', color: 'text-accent-orange', bg: 'bg-accent-orange/10' },
   SETTLED: { label: '✅ Đã thanh toán', color: 'text-text-muted', bg: 'bg-bg-tertiary' },

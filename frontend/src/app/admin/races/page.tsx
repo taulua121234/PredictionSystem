@@ -13,8 +13,8 @@ function getErrorMessage(e: unknown): string {
 }
 
 const TRANSITIONS: Record<string, { next: string; label: string; icon: React.ReactNode; color: string }> = {
-  UPCOMING: { next: 'BETTING_OPEN', label: 'Mở cược', icon: <Play size={14} />, color: 'bg-accent-green' },
-  BETTING_OPEN: { next: 'LOCKED', label: 'Khóa cược', icon: <Lock size={14} />, color: 'bg-accent-yellow text-black' },
+  UPCOMING: { next: 'BETTING_OPEN', label: 'Mở dự đoán', icon: <Play size={14} />, color: 'bg-accent-green' },
+  BETTING_OPEN: { next: 'LOCKED', label: 'Khóa dự đoán', icon: <Lock size={14} />, color: 'bg-accent-yellow text-black' },
   LOCKED: { next: 'FINISHED', label: 'Kết thúc', icon: <CheckCircle size={14} />, color: 'bg-accent-orange' },
 };
 
@@ -150,7 +150,7 @@ export default function AdminRacesPage() {
   };
 
   const handleDeleteRace = async (id: string, name: string) => {
-    if (!confirm(`Xác nhận XÓA race "${name}"?\n\nLưu ý: Chỉ xóa được race chưa có ai đặt cược.`)) return;
+    if (!confirm(`Xác nhận XÓA race "${name}"?\n\nLưu ý: Chỉ xóa được race chưa có ai dự đoán.`)) return;
     try {
       await adminApi.deleteRace(id);
       load();
@@ -158,7 +158,7 @@ export default function AdminRacesPage() {
   };
 
   const handleCancelRace = async (id: string, name: string) => {
-    if (!confirm(`Xác nhận HỦY race "${name}"?\n\nTất cả người chơi đã đặt cược sẽ được hoàn lại điểm.`)) return;
+    if (!confirm(`Xác nhận HỦY race "${name}"?\n\nTất cả người chơi đã dự đoán sẽ được hoàn lại điểm.`)) return;
     try {
       const res = await adminApi.cancelRace(id);
       alert(res.data?.data?.message || 'Đã hủy race thành công');
@@ -227,8 +227,11 @@ export default function AdminRacesPage() {
                   <div className="col-span-2 sm:col-span-1 flex items-center gap-2">
                     <label className="text-xs text-text-muted">Odd:</label>
                     <input 
-                      type="number" step="0.1" min="1" value={entry.odd} 
-                      onChange={e => updateEntry(idx, 'odd', parseFloat(e.target.value))}
+                      type="number" step="0.1" min="1" value={isNaN(entry.odd) ? '' : entry.odd} 
+                      onChange={e => {
+                        const val = parseFloat(e.target.value);
+                        updateEntry(idx, 'odd', isNaN(val) ? 1 : val);
+                      }}
                       className="w-20 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border focus:outline-none text-sm" 
                     />
                   </div>
@@ -261,7 +264,7 @@ export default function AdminRacesPage() {
               <div className="min-w-0">
                 <p className="font-semibold text-lg">{race.raceName}</p>
                 <p className="text-xs text-text-muted mt-1">
-                  Bắt đầu: {new Date(race.startTime).toLocaleString('vi-VN')} • Đóng cược: {new Date(race.closeBetTime).toLocaleString('vi-VN')}
+                  Bắt đầu: {new Date(race.startTime).toLocaleString('vi-VN')} • Đóng dự đoán: {new Date(race.closeBetTime).toLocaleString('vi-VN')}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold bg-bg-tertiary uppercase border border-border ${stateColor}`}>

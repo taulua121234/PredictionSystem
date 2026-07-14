@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getIncomeLeaderboard, getRoiLeaderboard, getPointsLeaderboard, getLeaderboardStats } from './leaderboard.controller';
 import { asyncHandler } from '../../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/income', asyncHandler(getIncomeLeaderboard));
 router.get('/roi', asyncHandler(getRoiLeaderboard));

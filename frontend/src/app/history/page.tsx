@@ -56,14 +56,14 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-bg-primary">
       <Header />
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-6 pb-24 md:pb-6">
-        <h1 className="text-2xl font-bold mb-6">📜 Lịch sử cược</h1>
+        <h1 className="text-2xl font-bold mb-6">📜 Lịch sử dự đoán</h1>
 
         {loading ? (
           <div className="py-10 text-center"><div className="w-6 h-6 border-2 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : bets.length === 0 ? (
           <div className="glass rounded-xl text-center py-16">
             <span className="text-4xl block mb-3">🎯</span>
-            <p className="text-text-secondary">Chưa có lượt đặt cược nào</p>
+            <p className="text-text-secondary">Chưa có lượt dự đoán nào</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -95,7 +95,7 @@ export default function HistoryPage() {
                   )}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <div className="text-sm">
-                      <span className="text-text-muted">Cược: </span>
+                      <span className="text-text-muted">Dự đoán: </span>
                       <span className="font-bold">{bet.amount.toLocaleString()} pts</span>
                       <span className="text-text-muted mx-2">×</span>
                       <span className="odds-badge">{bet.oddAtBetTime.toFixed(2)}</span>

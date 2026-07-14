@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -13,7 +13,7 @@ import leaderboardRoutes from './modules/leaderboard/leaderboard.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import umaRoutes from './modules/uma/uma.routes';
 
-const app = express();
+const app: Express = express();
 
 // ==================== Middleware ====================
 

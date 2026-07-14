@@ -183,7 +183,7 @@ export default function RaceDetailPage() {
     }
 
     if (betAmount > maxBetAmount) {
-      setBetResult({ success: false, message: `Số điểm cược tối đa là ${maxBetAmount.toLocaleString()} pts (70% số điểm hiện có).` });
+      setBetResult({ success: false, message: `Số điểm dự đoán tối đa là ${maxBetAmount.toLocaleString()} pts (70% số điểm hiện có).` });
       return;
     }
 
@@ -212,7 +212,7 @@ export default function RaceDetailPage() {
       const res = await betApi.place({ raceId, category: selectedCategory, prediction, amount: betAmount });
       const data = res.data.data;
       updatePoints(data.currentPoints);
-      setBetResult({ success: true, message: `Đặt cược thành công! Còn lại: ${data.currentPoints.toLocaleString()} pts` });
+      setBetResult({ success: true, message: `Dự đoán thành công! Còn lại: ${data.currentPoints.toLocaleString()} pts` });
 
       if (data.race?.entries) applyOddUpdates(data.race.entries);
       if (data.stats) {
@@ -282,13 +282,13 @@ export default function RaceDetailPage() {
               {isBettingOpen && timeLeft && (
                 <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent-yellow/10 text-accent-yellow font-bold text-sm border border-accent-yellow/20">
                   <Timer size={16} className="animate-pulse" />
-                  <span className="hidden sm:inline">Đóng cược sau:</span> <span className="tabular-nums font-mono">{timeLeft}</span>
+                  <span className="hidden sm:inline">Đóng dự đoán sau:</span> <span className="tabular-nums font-mono">{timeLeft}</span>
                 </div>
               )}
               <div className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
                 isBettingOpen ? 'bg-accent-green/10 text-accent-green glow-green' : 'bg-bg-tertiary text-text-secondary'
               }`}>
-                {isBettingOpen ? '🔥 ĐANG MỞ CƯỢC' : race.state.replace('_', ' ')}
+                {isBettingOpen ? '🔥 ĐANG MỞ DỰ ĐOÁN' : race.state.replace('_', ' ')}
               </div>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function RaceDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
           {/* Odds Board */}
           <div className="space-y-4">
-            <h2 className="text-lg font-bold">📊 Bảng tỷ lệ cược</h2>
+            <h2 className="text-lg font-bold">📊 Bảng tỷ lệ dự đoán</h2>
 
             <div className="hidden sm:block glass rounded-xl overflow-hidden">
               <div className="grid grid-cols-[auto_1fr_80px_120px] gap-0 text-xs font-semibold text-text-muted uppercase tracking-wider bg-bg-tertiary px-4 py-3">
@@ -443,11 +443,11 @@ export default function RaceDetailPage() {
           {/* Bet Slip (Right Panel) */}
           <div className="lg:sticky lg:top-20 lg:self-start">
             <div className="glass rounded-2xl p-5">
-              <h2 className="text-lg font-bold mb-4">🎯 Đặt cược</h2>
+              <h2 className="text-lg font-bold mb-4">🎯 Dự đoán</h2>
 
               {!isBettingOpen ? (
                 <p className="text-text-secondary text-sm text-center py-8">
-                  {race.state === 'UPCOMING' ? 'Chưa mở cược' : 'Đã đóng cược'}
+                  {race.state === 'UPCOMING' ? 'Chưa mở dự đoán' : 'Đã đóng dự đoán'}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -506,7 +506,7 @@ export default function RaceDetailPage() {
 
                   {/* Amount */}
                   <div>
-                    <label className="text-xs text-text-secondary font-medium block mb-1.5">Số điểm cược</label>
+                    <label className="text-xs text-text-secondary font-medium block mb-1.5">Số điểm dự đoán</label>
                     <input
                       type="number"
                       value={betAmount}
@@ -597,7 +597,7 @@ export default function RaceDetailPage() {
                     className="w-full py-3 rounded-xl bg-accent-green hover:brightness-110 disabled:opacity-50 text-white font-bold text-base transition-all flex items-center justify-center gap-2"
                     id="place-bet-button"
                   >
-                    {placing ? <Loader2 size={18} className="animate-spin" /> : '🎯 Đặt cược'}
+                    {placing ? <Loader2 size={18} className="animate-spin" /> : '🎯 Dự đoán'}
                   </button>
                 </div>
               )}
