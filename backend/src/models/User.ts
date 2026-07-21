@@ -23,11 +23,11 @@ const bettingUserSchema = new Schema<IBettingUser>(
     username: { type: String, required: true, trim: true },
     tier: {
       type: String,
-      enum: ['NORMAL', 'VIP', 'DELUXE'],
-      default: 'NORMAL',
+      enum: ['G3', 'G2', 'G1', 'NORMAL', 'VIP', 'DELUXE'],
+      default: 'G3',
     },
-    startingPoints: { type: Number, required: true, default: 3000 },
-    currentPoints: { type: Number, required: true, default: 3000 },
+    startingPoints: { type: Number, required: true, default: 10000 },
+    currentPoints: { type: Number, required: true, default: 10000 },
     totalBet: { type: Number, default: 0 },
     totalPayout: { type: Number, default: 0 },
     role: {

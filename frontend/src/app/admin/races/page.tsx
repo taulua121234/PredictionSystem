@@ -33,7 +33,10 @@ const toDateTimeLocalValue = (value: string) => {
   return localDate.toISOString().slice(0, 16);
 };
 
+import { useAuthStore } from '@/stores/authStore';
+
 export default function AdminRacesPage() {
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [races, setRaces] = useState<Race[]>([]);
   const [umas, setUmas] = useState<Uma[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -64,11 +67,9 @@ export default function AdminRacesPage() {
   };
 
   useEffect(() => { 
-    const init = async () => {
-      await load();
-    };
-    init();
-  }, []);
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    load();
+  }, [_hasHydrated, isAuthenticated, user]);
   const openCreate = () => {
     setEditingId(null);
     setForm({ raceName: '', description: '', startTime: '', closeBetTime: '', entries: [] });

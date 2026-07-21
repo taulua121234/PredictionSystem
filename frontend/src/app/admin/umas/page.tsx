@@ -7,12 +7,30 @@ import type { Uma, CreateUmaPayload } from '@/types';
 import { getErrorMessage } from '@/types';
 import { Edit3, Trash2, X, Loader2, Save } from 'lucide-react';
 
+import { useAuthStore } from '@/stores/authStore';
+
 interface Trainer {
   _id: string;
   name: string;
 }
 
+function getUmaTrainerId(trainerId: any): string | null {
+  if (!trainerId) return null;
+  return typeof trainerId === 'string' ? trainerId : trainerId._id || null;
+}
+
+function getUmaTrainerName(trainerId: any, trainers: Trainer[]): string | null {
+  if (!trainerId) return null;
+  if (typeof trainerId === 'object' && trainerId.name) {
+    return trainerId.name;
+  }
+  const id = typeof trainerId === 'string' ? trainerId : trainerId._id;
+  const found = trainers.find(t => t._id === id);
+  return found ? found.name : null;
+}
+
 export default function AdminUmasPage() {
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [umas, setUmas] = useState<Uma[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   
@@ -33,12 +51,14 @@ export default function AdminUmasPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => { loadData(); }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    loadData();
+  }, [_hasHydrated, isAuthenticated, user]);
 
   const handleEdit = (uma: Uma) => {
-    setEditingUma(JSON.parse(JSON.stringify(uma)));
+    const raw = JSON.parse(JSON.stringify(uma));
+    raw.trainerId = getUmaTrainerId(uma.trainerId) || '';
+    setEditingUma(raw);
   };
 
   const handleSave = async () => {
@@ -71,7 +91,7 @@ export default function AdminUmasPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {umas.map(uma => {
-          const trainer = trainers.find(t => t._id === uma.trainerId);
+          const trainerName = getUmaTrainerName(uma.trainerId, trainers);
           return (
             <div key={uma._id} className="glass rounded-xl p-5 border border-border/50 shadow-sm flex flex-col relative">
               <div className="flex items-start justify-between">
@@ -84,7 +104,7 @@ export default function AdminUmasPage() {
                   <div>
                     <h3 className="font-bold text-lg">{uma.name}</h3>
                     <p className="text-xs text-text-muted">
-                      {trainer ? `Thuộc: ${trainer.name}` : 'Chưa có Trainer'}
+                      {trainerName ? `Thuộc: ${trainerName}` : 'Chưa có Trainer'}
                     </p>
                   </div>
                 </div>
@@ -160,7 +180,7 @@ export default function AdminUmasPage() {
                     <option key={t._id} value={t._id}>{t.name}</option>
                   ))}
                 </select>
-                <p className="text-[11px] text-text-muted mt-1.5 italic">* Lưu ý: Một trainer chỉ được chứa tối đa 3 Umas.</p>
+                <p className="text-[11px] text-text-muted mt-1.5 italic">* Lưu ý: Một trainer chỉ được chứa tối đa 4 Umas.</p>
               </div>
 
               <div>

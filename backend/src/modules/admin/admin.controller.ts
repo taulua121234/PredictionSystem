@@ -278,8 +278,8 @@ export async function createUma(req: Request, res: Response) {
 
     if (trainerId) {
       const umaCount = await Uma.countDocuments({ trainerId });
-      if (umaCount >= 3) {
-        return respond.badRequest(res, 'Trainer already has maximum of 3 Umas');
+      if (umaCount >= 4) {
+        return respond.badRequest(res, 'Trainer already has maximum of 4 Umas');
       }
     }
 
@@ -312,8 +312,8 @@ export async function updateUma(req: Request, res: Response) {
 
     if (trainerId && trainerId !== existingUma.trainerId?.toString()) {
       const umaCount = await Uma.countDocuments({ trainerId });
-      if (umaCount >= 3) {
-        return respond.badRequest(res, 'New trainer already has maximum of 3 Umas');
+      if (umaCount >= 4) {
+        return respond.badRequest(res, 'New trainer already has maximum of 4 Umas');
       }
     }
 

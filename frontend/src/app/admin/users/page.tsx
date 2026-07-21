@@ -6,14 +6,20 @@ import { adminApi } from '@/services/api';
 import type { BettingUser } from '@/types';
 import { getErrorMessage } from '@/types';
 
+import { useAuthStore } from '@/stores/authStore';
+
 export default function AdminUsersPage() {
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [users, setUsers] = useState<BettingUser[]>([]);
   const [adjustId, setAdjustId] = useState<string | null>(null);
   const [adjustAmt, setAdjustAmt] = useState(0);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const load = () => adminApi.listUsers().then(r => setUsers(r.data.data || []));
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    load();
+  }, [_hasHydrated, isAuthenticated, user]);
 
   const adjust = async (id: string) => {
     if (!adjustAmt) return;

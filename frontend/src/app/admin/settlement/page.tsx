@@ -6,7 +6,10 @@ import { raceApi, adminApi } from '@/services/api';
 import type { Race, RaceEntry, RaceResultPayload } from '@/types';
 import { getErrorMessage } from '@/types';
 
+import { useAuthStore } from '@/stores/authStore';
+
 export default function SettlementPage() {
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [races, setRaces] = useState<Race[]>([]);
   const [settling, setSettling] = useState<string | null>(null);
   const [resultForm, setResultForm] = useState<Record<string, RaceResultPayload>>({});
@@ -17,7 +20,10 @@ export default function SettlementPage() {
     );
   };
 
-  useEffect(() => { loadRaces(); }, []);
+  useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    loadRaces();
+  }, [_hasHydrated, isAuthenticated, user]);
 
   const setResult = async (id: string) => {
     const form = resultForm[id];

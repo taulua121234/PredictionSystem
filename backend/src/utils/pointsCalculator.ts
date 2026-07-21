@@ -3,9 +3,12 @@
  */
 
 export const TIER_STARTING_POINTS: Record<string, number> = {
-  NORMAL: 3000,
-  VIP: 4000,
-  DELUXE: 5000,
+  G3: 10000,
+  G2: 11000,
+  G1: 12000,
+  NORMAL: 10000,
+  VIP: 11000,
+  DELUXE: 12000,
 };
 
 /**
@@ -37,11 +40,11 @@ export function calculateROI(totalPayout: number, totalBet: number): number {
 export function mapTicketTier(ticketTypeName: string): { tier: string; startingPoints: number } {
   const normalized = ticketTypeName.toUpperCase().trim();
 
-  if (normalized.includes('DELUXE') || normalized.includes('PREMIUM')) {
-    return { tier: 'DELUXE', startingPoints: TIER_STARTING_POINTS.DELUXE };
+  if (normalized.includes('G1') || normalized.includes('DELUXE') || normalized.includes('PREMIUM')) {
+    return { tier: 'G1', startingPoints: TIER_STARTING_POINTS.G1 };
   }
-  if (normalized.includes('VIP')) {
-    return { tier: 'VIP', startingPoints: TIER_STARTING_POINTS.VIP };
+  if (normalized.includes('G2') || normalized.includes('VIP')) {
+    return { tier: 'G2', startingPoints: TIER_STARTING_POINTS.G2 };
   }
-  return { tier: 'NORMAL', startingPoints: TIER_STARTING_POINTS.NORMAL };
+  return { tier: 'G3', startingPoints: TIER_STARTING_POINTS.G3 };
 }

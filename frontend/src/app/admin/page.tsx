@@ -3,14 +3,21 @@
 import { useEffect, useState } from 'react';
 import { Users, Flag, Target, Coins } from 'lucide-react';
 import { adminApi } from '@/services/api';
+import { useAuthStore } from '@/stores/authStore';
 import type { DashboardStats } from '@/types';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    adminApi.stats().then(res => setStats(res.data.data)).catch(console.error);
-  }, []);
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    adminApi.stats().then(res => setStats(res.data.data)).catch((err) => {
+      if (err.response?.status !== 401) {
+        console.error(err);
+      }
+    });
+  }, [_hasHydrated, isAuthenticated, user]);
 
   const cards = [
     { label: 'Total Users', value: stats?.totalUsers || 0, icon: <Users size={20} />, color: 'text-accent-blue' },

@@ -22,7 +22,10 @@ function getUmaTrainerId(uma: Uma): string | null {
   return typeof trainerId === 'string' ? trainerId : trainerId._id;
 }
 
+import { useAuthStore } from '@/stores/authStore';
+
 export default function AdminTrainersPage() {
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [umas, setUmas] = useState<Uma[]>([]);
   
@@ -55,9 +58,9 @@ export default function AdminTrainersPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => { loadData(); }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!_hasHydrated || !isAuthenticated || user?.role !== 'admin') return;
+    loadData();
+  }, [_hasHydrated, isAuthenticated, user]);
 
   const createTrainer = async () => {
     if (!trainerForm.name) return;
@@ -78,8 +81,8 @@ export default function AdminTrainersPage() {
     try { 
       // check limit before request to give immediate feedback or rely on backend
       const count = umas.filter(u => getUmaTrainerId(u) === selectedTrainerId).length;
-      if (count >= 3) {
-        alert("Trainer này đã có tối đa 3 Umas.");
+      if (count >= 4) {
+        alert("Trainer này đã có tối đa 4 Umas.");
         return;
       }
       await adminApi.createUma({ ...umaForm, trainerId: selectedTrainerId }); 
@@ -168,7 +171,7 @@ export default function AdminTrainersPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {trainers.map(trainer => {
           const trainerUmas = umas.filter(u => getUmaTrainerId(u) === trainer._id);
-          const isFull = trainerUmas.length >= 3;
+          const isFull = trainerUmas.length >= 4;
 
           return (
             <div key={trainer._id} className="glass rounded-xl p-5 border border-border/50 shadow-sm flex flex-col">
@@ -182,7 +185,7 @@ export default function AdminTrainersPage() {
                   </div>
                   <div>
                     <h2 className="font-bold text-lg">{trainer.name}</h2>
-                    <p className="text-xs text-text-muted">{trainerUmas.length}/3 Umas</p>
+                    <p className="text-xs text-text-muted">{trainerUmas.length}/4 Umas</p>
                   </div>
                 </div>
                   <div className="flex gap-2">
@@ -236,7 +239,7 @@ export default function AdminTrainersPage() {
                 className={`mt-4 w-full py-2.5 rounded-lg border border-dashed text-sm font-semibold flex items-center justify-center gap-2 transition-colors
                   ${isFull ? 'bg-bg-tertiary/50 border-border text-text-muted cursor-not-allowed' : 'border-accent-blue/50 text-accent-blue hover:bg-accent-blue/10 hover:border-accent-blue'}`}
               >
-                {isFull ? 'Đã đạt giới hạn 3 Umas' : <><Plus size={16} /> Thêm Uma</>}
+                {isFull ? 'Đã đạt giới hạn 4 Umas' : <><Plus size={16} /> Thêm Uma</>}
               </button>
             </div>
           );

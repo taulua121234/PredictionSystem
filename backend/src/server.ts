@@ -2,6 +2,7 @@ import http from 'http';
 import { Server as SocketServer } from 'socket.io';
 import app from './app';
 import { connectBettingDb } from './config/database';
+import { seedAdmin } from './seed/seedAdmin';
 import { setupSocketHandlers } from './modules/websocket/socketHandler';
 import { createLogger } from './utils/logger';
 
@@ -14,6 +15,7 @@ async function start() {
   try {
     // Connect to MongoDB
     await connectBettingDb();
+    await seedAdmin();
 
     // Create HTTP server
     const server = http.createServer(app);
