@@ -173,12 +173,19 @@ export async function setRaceResult(req: Request, res: Response) {
 
 /**
  * DELETE /admin/races/:id
- * Delete a race (only if no bets placed)
+ * Delete a race (only if no bets placed, or if race is CANCELLED)
  */
 export async function deleteRace(req: Request, res: Response) {
   try {
     const race = await Race.findById(req.params.id);
     if (!race) return respond.notFound(res, 'Race not found');
+
+    if (race.state === 'CANCELLED') {
+      await Bet.deleteMany({ raceId: race._id });
+      await Race.findByIdAndDelete(race._id);
+      logger.info(`Cancelled race deleted: ${race.raceName}`);
+      return respond.success(res, { message: 'Race deleted' });
+    }
 
     const betCount = await Bet.countDocuments({ raceId: race._id });
     if (betCount > 0) {

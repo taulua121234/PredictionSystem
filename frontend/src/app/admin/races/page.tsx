@@ -151,7 +151,7 @@ export default function AdminRacesPage() {
   };
 
   const handleDeleteRace = async (id: string, name: string) => {
-    if (!confirm(`Xác nhận XÓA race "${name}"?\n\nLưu ý: Chỉ xóa được race chưa có ai dự đoán.`)) return;
+    if (!confirm(`Xác nhận XÓA race "${name}"?\n\nLưu ý: Chỉ xóa được race chưa có ai dự đoán hoặc race đã Hủy.`)) return;
     try {
       await adminApi.deleteRace(id);
       load();
