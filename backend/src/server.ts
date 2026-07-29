@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import http from 'http';
 import { Server as SocketServer } from 'socket.io';
 import app from './app';
@@ -7,7 +8,7 @@ import { setupSocketHandlers } from './modules/websocket/socketHandler';
 import { createLogger } from './utils/logger';
 
 const logger = createLogger('server');
-const PORT = process.env.BETTING_PORT || 3005;
+const PORT = process.env.PORT || process.env.BETTING_PORT || 3005;
 
 import { startCronJobs } from './tasks/cron';
 
