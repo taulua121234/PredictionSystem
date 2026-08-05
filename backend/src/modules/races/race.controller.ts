@@ -36,7 +36,7 @@ export async function listRaces(req: Request, res: Response) {
 export async function getRaceById(req: Request, res: Response) {
   try {
     const race = await Race.findById(req.params.id)
-      .populate('entries.umaId', 'name imageUrl infoImageUrl stats')
+      .populate('entries.umaId', 'name imageUrl infoImageUrl galleryImages stats')
       .populate('entries.trainerId', 'name imageUrl')
       .populate('result.first', 'name imageUrl')
       .populate('result.second', 'name imageUrl')

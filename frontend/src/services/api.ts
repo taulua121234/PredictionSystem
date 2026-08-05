@@ -77,7 +77,8 @@ export const leaderboardApi = {
 // ==================== Uma API ====================
 
 export const umaApi = {
-  list: () => api.get('/umas'),
+  list: (params?: { page?: number; limit?: number; search?: string; trainerId?: string }) =>
+    api.get('/umas', { params }),
   getById: (id: string) => api.get(`/umas/${id}`),
 };
 
