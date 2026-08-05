@@ -3,7 +3,7 @@ import { AxiosError } from 'axios';
 // ==================== Shared Types ====================
 
 export interface RaceEntry {
-  umaId: string | { _id: string; name: string; imageUrl?: string; infoImageUrl?: string };
+  umaId: string | { _id: string; name: string; imageUrl?: string; infoImageUrl?: string; galleryImages?: string[] };
   trainerId?: string | { _id: string; name: string; imageUrl?: string };
   baseOdd?: number;
   currentOdd?: number;
@@ -33,6 +33,7 @@ export interface Uma {
   name: string;
   imageUrl?: string;
   infoImageUrl?: string;
+  galleryImages?: string[];
   stats?: {
     speed?: number;
     stamina?: number;

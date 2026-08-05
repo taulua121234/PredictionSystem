@@ -218,11 +218,6 @@ export default function AdminTrainersPage() {
                         </div>
                       </div>
                       <div className="flex gap-1.5">
-                        <button onClick={() => { setUploadTarget({ type: 'uma', id: uma._id }); fileRef.current?.click(); }}
-                          disabled={uploading === uma._id}
-                          className="p-1.5 rounded-lg text-accent-purple/80 hover:bg-accent-purple/20 transition-colors" title="Đổi ảnh">
-                          {uploading === uma._id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                        </button>
                         <button onClick={() => delUma(uma._id)} className="p-1.5 rounded-lg text-accent-red/80 hover:bg-accent-red/20 transition-colors" title="Xóa">
                           <Trash2 size={14} />
                         </button>

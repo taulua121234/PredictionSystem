@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import NextImage from 'next/image';
 import { adminApi, umaApi } from '@/services/api';
 import type { Uma, CreateUmaPayload } from '@/types';
 import { getErrorMessage } from '@/types';
-import { Edit3, Trash2, X, Loader2, Save } from 'lucide-react';
+import { Edit3, Trash2, X, Loader2, Save, Upload, ImagePlus, Trash, Images } from 'lucide-react';
 
 import { useAuthStore } from '@/stores/authStore';
 
@@ -36,6 +36,12 @@ export default function AdminUmasPage() {
   
   const [editingUma, setEditingUma] = useState<Uma | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Gallery management state
+  const [galleryUma, setGalleryUma] = useState<Uma | null>(null);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     try {
@@ -85,6 +91,46 @@ export default function AdminUmasPage() {
     try { await adminApi.deleteUma(id); loadData(); } catch (e) { alert(getErrorMessage(e)); }
   };
 
+  // Gallery handlers
+  const openGallery = (uma: Uma) => {
+    setGalleryUma(uma);
+  };
+
+  const handleGalleryUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !galleryUma) return;
+    setUploadingGallery(true);
+    try {
+      const fileArray = Array.from(files);
+      const res = await adminApi.uploadUmaGallery(galleryUma._id, fileArray);
+      const updatedGallery = res.data?.data?.galleryImages || res.data?.galleryImages || [];
+      setGalleryUma({ ...galleryUma, galleryImages: updatedGallery });
+      loadData();
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setUploadingGallery(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteGalleryImage = async (imageUrl: string) => {
+    if (!galleryUma) return;
+    if (!confirm('Xóa ảnh này khỏi gallery?')) return;
+    setDeletingImage(imageUrl);
+    try {
+      const res = await adminApi.deleteUmaGalleryImage(galleryUma._id, imageUrl);
+      const updatedGallery = res.data?.data?.galleryImages || res.data?.galleryImages || [];
+      setGalleryUma({ ...galleryUma, galleryImages: updatedGallery });
+      loadData();
+    } catch (e) {
+      alert(getErrorMessage(e));
+    } finally {
+      setDeletingImage(null);
+    }
+  };
+
+  const galleryCount = (uma: Uma) => (uma.galleryImages?.length || 0);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">🐴 Uma Management</h1>
@@ -109,6 +155,18 @@ export default function AdminUmasPage() {
                   </div>
                 </div>
                 <div className="flex gap-1.5">
+                  <button 
+                    onClick={() => openGallery(uma)} 
+                    className="p-2 rounded-lg text-accent-green/80 hover:bg-accent-green/20 transition-colors relative"
+                    title="Quản lý Gallery"
+                  >
+                    <Images size={16} />
+                    {galleryCount(uma) > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-blue text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                        {galleryCount(uma)}
+                      </span>
+                    )}
+                  </button>
                   <button onClick={() => handleEdit(uma)} className="p-2 rounded-lg text-accent-blue/80 hover:bg-accent-blue/20 transition-colors">
                     <Edit3 size={16} />
                   </button>
@@ -150,6 +208,7 @@ export default function AdminUmasPage() {
         )}
       </div>
 
+      {/* Edit Uma Modal */}
       {editingUma && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="glass rounded-xl p-6 w-full max-w-md animate-fade-in">
@@ -210,6 +269,105 @@ export default function AdminUmasPage() {
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
                 Lưu thay đổi
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Management Modal */}
+      {galleryUma && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="glass rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-fade-in">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-border/50 shrink-0">
+              <div>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Images size={20} />
+                  Gallery — {galleryUma.name}
+                </h3>
+                <p className="text-xs text-text-muted mt-1">
+                  {(galleryUma.galleryImages?.length || 0)} ảnh trong gallery
+                </p>
+              </div>
+              <button onClick={() => setGalleryUma(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Upload section */}
+            <div className="px-6 py-4 border-b border-border/30 shrink-0">
+              <input
+                ref={galleryInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleGalleryUpload(e.target.files)}
+                className="hidden"
+              />
+              <button
+                onClick={() => galleryInputRef.current?.click()}
+                disabled={uploadingGallery}
+                className="w-full py-3 rounded-lg border-2 border-dashed border-border hover:border-accent-blue/50 bg-bg-tertiary/30 hover:bg-accent-blue/5 transition-all flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent-blue disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {uploadingGallery ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Đang upload...
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus size={16} />
+                    Chọn ảnh để upload (có thể chọn nhiều ảnh)
+                  </>
+                )}
+              </button>
+              <p className="text-[10px] text-text-muted mt-1.5 text-center">
+                Hỗ trợ: JPEG, PNG, WebP — Tối đa 5MB / ảnh
+              </p>
+            </div>
+
+            {/* Gallery grid */}
+            <div className="flex-1 overflow-auto px-6 py-4">
+              {(!galleryUma.galleryImages || galleryUma.galleryImages.length === 0) ? (
+                <div className="text-center py-12 text-text-muted">
+                  <Images size={40} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm italic">Chưa có ảnh nào trong gallery</p>
+                  <p className="text-xs mt-1">Nhấn nút phía trên để upload ảnh</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {galleryUma.galleryImages.map((url, idx) => (
+                    <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-border/50 bg-bg-tertiary">
+                      <NextImage
+                        src={url.startsWith('http') ? url : `http://localhost:3005${url}`}
+                        alt={`${galleryUma.name} gallery ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      {/* Delete overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => handleDeleteGalleryImage(url)}
+                          disabled={deletingImage === url}
+                          className="p-2.5 rounded-full bg-red-600/90 hover:bg-red-500 text-white transition-colors shadow-lg disabled:opacity-60"
+                          title="Xóa ảnh"
+                        >
+                          {deletingImage === url ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <Trash size={16} />
+                          )}
+                        </button>
+                      </div>
+                      {/* Index badge */}
+                      <div className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        {idx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

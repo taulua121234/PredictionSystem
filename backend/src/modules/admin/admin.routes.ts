@@ -4,6 +4,7 @@ import { settleRace } from '../settlement/settlement.controller';
 import {
   createRace, updateRace, changeRaceState, setRaceResult, deleteRace, cancelRace,
   createUma, updateUma, deleteUma, uploadUmaInfoImage, uploadInfoImage,
+  uploadUmaGallery, deleteUmaGalleryImage, uploadGalleryImages,
   createTrainer, updateTrainer, deleteTrainer, listTrainers,
   listUsers, adjustPoints, deleteUser, toggleLockUser,
   getDashboardStats,
@@ -31,6 +32,8 @@ router.post('/umas', asyncHandler(createUma));
 router.put('/umas/:id', asyncHandler(updateUma));
 router.delete('/umas/:id', asyncHandler(deleteUma));
 router.post('/umas/:id/info-image', uploadInfoImage.single('infoImage'), asyncHandler(uploadUmaInfoImage));
+router.post('/umas/:id/gallery', uploadGalleryImages.array('galleryImages', 20), asyncHandler(uploadUmaGallery));
+router.delete('/umas/:id/gallery', asyncHandler(deleteUmaGalleryImage));
 
 // Trainer management
 router.get('/trainers', asyncHandler(listTrainers));

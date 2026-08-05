@@ -106,6 +106,15 @@ export const adminApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  uploadUmaGallery: (id: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('galleryImages', file));
+    return api.post(`/admin/umas/${id}/gallery`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteUmaGalleryImage: (id: string, imageUrl: string) =>
+    api.delete(`/admin/umas/${id}/gallery`, { data: { imageUrl } }),
   // Trainers
   getTrainers: () => api.get('/admin/trainers').then((res) => res.data),
   createTrainer: (data: CreateTrainerPayload) => api.post('/admin/trainers', data),

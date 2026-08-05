@@ -25,7 +25,7 @@ interface RaceData {
 }
 
 interface PopulatedRaceEntry {
-  umaId: { _id: string; name: string; imageUrl?: string; infoImageUrl?: string };
+  umaId: { _id: string; name: string; imageUrl?: string; infoImageUrl?: string; galleryImages?: string[] };
   trainerId?: { _id: string; name: string };
   baseOdd?: number;
   currentOdd?: number;
@@ -68,7 +68,7 @@ export default function RaceDetailPage() {
   const [betResult, setBetResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Uma info popup
-  const [popupUma, setPopupUma] = useState<{ name: string; infoImageUrl?: string } | null>(null);
+  const [popupUma, setPopupUma] = useState<{ name: string; infoImageUrl?: string; galleryImages?: string[] } | null>(null);
   const maxBetAmount = Math.floor((user?.currentPoints ?? 0) * 0.7);
   const clampBetAmount = (amount: number) => Math.min(Math.max(amount, 0), maxBetAmount);
 
@@ -328,9 +328,9 @@ export default function RaceDetailPage() {
                         <span className="font-medium group-hover:text-accent-blue transition-colors">
                           {entry.umaId.name}
                         </span>
-                        {entry.umaId.infoImageUrl && (
+                        {(entry.umaId.infoImageUrl || (entry.umaId.galleryImages && entry.umaId.galleryImages.length > 0)) && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl }); }}
+                            onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl, galleryImages: entry.umaId.galleryImages }); }}
                             className="p-0.5 rounded text-accent-blue/60 hover:text-accent-blue hover:bg-accent-blue/10 transition-all"
                             title="Xem thông tin Uma"
                           >
@@ -387,9 +387,9 @@ export default function RaceDetailPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-text-muted">#{i + 1}</span>
                           <span className="font-semibold truncate">{entry.umaId.name}</span>
-                          {entry.umaId.infoImageUrl && (
+                          {(entry.umaId.infoImageUrl || (entry.umaId.galleryImages && entry.umaId.galleryImages.length > 0)) && (
                             <span
-                              onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl }); }}
+                              onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl, galleryImages: entry.umaId.galleryImages }); }}
                               className="p-1 rounded text-accent-blue/70 hover:text-accent-blue hover:bg-accent-blue/10"
                               title="Xem thông tin Uma"
                             >
@@ -613,6 +613,7 @@ export default function RaceDetailPage() {
         onClose={() => setPopupUma(null)}
         umaName={popupUma?.name || ''}
         infoImageUrl={popupUma?.infoImageUrl}
+        galleryImages={popupUma?.galleryImages}
       />
     </div>
   );

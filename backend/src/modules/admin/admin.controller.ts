@@ -32,6 +32,19 @@ export const uploadInfoImage = multer({
   },
 });
 
+export const uploadGalleryImages = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WebP images are allowed'));
+    }
+  },
+});
+
 // ==================== Race Management ====================
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -379,6 +392,96 @@ export async function uploadUmaInfoImage(req: Request, res: Response) {
   } catch (err) {
     logger.error('Upload uma info image error:', err);
     respond.serverError(res, 'Failed to upload image');
+  }
+}
+
+// ==================== Uma Gallery ====================
+
+/**
+ * POST /admin/umas/:id/gallery
+ * Upload multiple images to uma gallery
+ */
+export async function uploadUmaGallery(req: Request, res: Response) {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+      return respond.badRequest(res, 'No image files uploaded');
+    }
+
+    const uma = await Uma.findById(req.params.id);
+    if (!uma) {
+      return respond.notFound(res, 'Uma not found');
+    }
+
+    // Upload all files to Cloudinary in parallel
+    const uploadPromises = files.map(async (file) => {
+      const b64 = Buffer.from(file.buffer).toString('base64');
+      const dataURI = `data:${file.mimetype};base64,${b64}`;
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'evient/uma-gallery',
+        public_id: `uma-gallery-${uma._id}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      });
+      return result.secure_url;
+    });
+
+    const uploadedUrls = await Promise.all(uploadPromises);
+    uma.galleryImages.push(...uploadedUrls);
+    await uma.save();
+
+    logger.info(`${uploadedUrls.length} gallery images uploaded for Uma: ${uma.name}`);
+    respond.success(res, { galleryImages: uma.galleryImages });
+  } catch (err) {
+    logger.error('Upload uma gallery error:', err);
+    respond.serverError(res, 'Failed to upload gallery images');
+  }
+}
+
+/**
+ * DELETE /admin/umas/:id/gallery
+ * Remove an image from uma gallery
+ * Body: { imageUrl: string }
+ */
+export async function deleteUmaGalleryImage(req: Request, res: Response) {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return respond.badRequest(res, 'imageUrl is required');
+    }
+
+    const uma = await Uma.findById(req.params.id);
+    if (!uma) {
+      return respond.notFound(res, 'Uma not found');
+    }
+
+    const index = uma.galleryImages.indexOf(imageUrl);
+    if (index === -1) {
+      return respond.notFound(res, 'Image not found in gallery');
+    }
+
+    // Extract public_id from Cloudinary URL and delete
+    try {
+      const urlParts = imageUrl.split('/');
+      const folderAndFile = urlParts.slice(urlParts.indexOf('evient')).join('/');
+      const publicId = folderAndFile.replace(/\.[^/.]+$/, ''); // Remove extension
+      await cloudinary.uploader.destroy(publicId);
+    } catch (cloudErr) {
+      logger.warn('Failed to delete image from Cloudinary (continuing):', cloudErr);
+    }
+
+    uma.galleryImages.splice(index, 1);
+
+    // Also clear infoImageUrl if it matches the deleted image
+    if (uma.infoImageUrl === imageUrl) {
+      uma.infoImageUrl = undefined;
+    }
+
+    await uma.save();
+
+    logger.info(`Gallery image removed for Uma: ${uma.name}`);
+    respond.success(res, { galleryImages: uma.galleryImages });
+  } catch (err) {
+    logger.error('Delete uma gallery image error:', err);
+    respond.serverError(res, 'Failed to delete gallery image');
   }
 }
 
