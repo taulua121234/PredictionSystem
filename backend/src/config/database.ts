@@ -1,7 +1,16 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('database');
+
+// Fix Node.js DNS SRV lookup issues on Windows for MongoDB Atlas (querySrv ECONNREFUSED)
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  // Ignore fallback errors
+}
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const BETTING_DB = process.env.MONGODB_BETTING_DB || 'betting_db';
@@ -12,12 +21,21 @@ function cleanUri(uri: string): string {
 }
 
 /**
- * Connect the default mongoose connection to betting_db
+ * Connect the default mongoose connection to betting_db with retry logic
  */
-export async function connectBettingDb(): Promise<void> {
+export async function connectBettingDb(retries = 5, delayMs = 3000): Promise<void> {
   const uri = `${cleanUri(MONGO_URI)}/${BETTING_DB}`;
-  await mongoose.connect(uri, { maxPoolSize: 10 });
-  logger.info(`Connected to MongoDB: ${BETTING_DB}`);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await mongoose.connect(uri, { maxPoolSize: 10, serverSelectionTimeoutMS: 5000 });
+      logger.info(`Connected to MongoDB: ${BETTING_DB}`);
+      return;
+    } catch (err) {
+      logger.warn(`MongoDB connection attempt ${attempt}/${retries} failed: ${(err as Error).message}`);
+      if (attempt === retries) throw err;
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+  }
 }
 
 /**

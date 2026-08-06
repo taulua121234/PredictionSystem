@@ -315,7 +315,10 @@ export default function RaceDetailPage() {
             <div className="hidden sm:block glass rounded-xl overflow-hidden">
               <div className="grid grid-cols-[auto_1fr_80px_120px] gap-0 text-xs font-semibold text-text-muted uppercase tracking-wider bg-bg-tertiary px-4 py-3">
                 <span className="w-8">#</span>
-                <span>Uma / Trainer</span>
+                <div className="flex items-center justify-between pr-4">
+                  <span>Uma</span>
+                  <span>Trainer</span>
+                </div>
                 <span className="text-center">Odds</span>
                 <span className="text-right">Dự đoán</span>
               </div>
@@ -363,7 +366,7 @@ export default function RaceDetailPage() {
                         )}
                       </div>
                       {entry.trainerId && (
-                        <span className="text-[11px] font-medium text-text-muted text-right">
+                        <span className="text-[15px] font-semibold text-text-secondary text-right">
                           {entry.trainerId.name}
                         </span>
                       )}
@@ -422,7 +425,7 @@ export default function RaceDetailPage() {
                           )}
                         </div>
                         {entry.trainerId && (
-                          <p className="text-xs text-text-muted mt-0.5 truncate">{entry.trainerId.name}</p>
+                          <p className="text-[15px] font-semibold text-text-secondary mt-0.5 truncate">{entry.trainerId.name}</p>
                         )}
                         {entry.umaId.stats && (
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[10px] font-mono text-text-muted bg-bg-tertiary/60 px-2 py-1 rounded border border-border/40">
@@ -504,7 +507,18 @@ export default function RaceDetailPage() {
                   {/* Selection display */}
                   <div className="bg-bg-tertiary rounded-lg p-3">
                     {selectedCategory === 'UMA_WIN' && (
-                      <p className="text-sm">{selectedUma ? `Chọn: ${entries.find(e => e.umaId._id === selectedUma)?.umaId.name}` : 'Click uma ở bảng bên trái'}</p>
+                      <p className="text-sm">
+                        {selectedUma ? (
+                          <>
+                            Chọn: <span className="font-semibold">{entries.find(e => e.umaId._id === selectedUma)?.umaId.name}</span>
+                            {entries.find(e => e.umaId._id === selectedUma)?.trainerId?.name && (
+                              <span className="text-text-muted text-xs ml-1 font-normal">
+                                ({entries.find(e => e.umaId._id === selectedUma)?.trainerId?.name})
+                              </span>
+                            )}
+                          </>
+                        ) : 'Click uma ở bảng bên trái'}
+                      </p>
                     )}
                     {selectedCategory === 'TRAINER_WIN' && (
                       <select
@@ -529,7 +543,9 @@ export default function RaceDetailPage() {
                           >
                             <option value="">{['🥇 Top 1', '🥈 Top 2', '🥉 Top 3'][i]}</option>
                             {entries.map(e => (
-                              <option key={e.umaId._id} value={e.umaId._id}>{e.umaId.name}</option>
+                              <option key={e.umaId._id} value={e.umaId._id}>
+                                {e.umaId.name}{e.trainerId?.name ? ` — ${e.trainerId.name}` : ''}
+                              </option>
                             ))}
                           </select>
                         ))}
