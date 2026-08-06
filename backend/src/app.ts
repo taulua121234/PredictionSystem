@@ -15,6 +15,9 @@ import umaRoutes from './modules/uma/uma.routes';
 
 const app: Express = express();
 
+// Trust proxy for reverse proxies like Render/Cloudflare (fixes express-rate-limit ERR_ERL_UNEXPECTED_X_FORWARDED_FOR)
+app.set('trust proxy', 1);
+
 // ==================== Middleware ====================
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));

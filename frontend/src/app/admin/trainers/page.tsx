@@ -213,7 +213,7 @@ export default function AdminTrainersPage() {
                         <div>
                           <p className="font-semibold text-sm">{uma.name}</p>
                           <p className="text-[10px] text-text-muted font-mono mt-0.5">
-                            SPD:{uma.stats?.speed} STA:{uma.stats?.stamina} PWR:{uma.stats?.power} GUT:{uma.stats?.guts} WIS:{uma.stats?.wisdom}
+                            SPD:{uma.stats?.speed} STA:{uma.stats?.stamina} PWR:{uma.stats?.power} GUT:{uma.stats?.guts} WIT:{uma.stats?.wisdom}
                           </p>
                         </div>
                       </div>

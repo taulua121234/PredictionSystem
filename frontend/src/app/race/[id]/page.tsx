@@ -25,7 +25,20 @@ interface RaceData {
 }
 
 interface PopulatedRaceEntry {
-  umaId: { _id: string; name: string; imageUrl?: string; infoImageUrl?: string; galleryImages?: string[] };
+  umaId: {
+    _id: string;
+    name: string;
+    imageUrl?: string;
+    infoImageUrl?: string;
+    galleryImages?: string[];
+    stats?: {
+      speed?: number;
+      stamina?: number;
+      power?: number;
+      guts?: number;
+      wisdom?: number;
+    };
+  };
   trainerId?: { _id: string; name: string };
   baseOdd?: number;
   currentOdd?: number;
@@ -324,18 +337,29 @@ export default function RaceDetailPage() {
                   >
                     <span className="w-8 text-sm font-bold text-text-muted">{i + 1}</span>
                     <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium group-hover:text-accent-blue transition-colors">
-                          {entry.umaId.name}
-                        </span>
-                        {(entry.umaId.infoImageUrl || (entry.umaId.galleryImages && entry.umaId.galleryImages.length > 0)) && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl, galleryImages: entry.umaId.galleryImages }); }}
-                            className="p-0.5 rounded text-accent-blue/60 hover:text-accent-blue hover:bg-accent-blue/10 transition-all"
-                            title="Xem thông tin Uma"
-                          >
-                            <Info size={14} />
-                          </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold group-hover:text-accent-blue transition-colors">
+                            {entry.umaId.name}
+                          </span>
+                          {(entry.umaId.infoImageUrl || (entry.umaId.galleryImages && entry.umaId.galleryImages.length > 0)) && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPopupUma({ name: entry.umaId.name, infoImageUrl: entry.umaId.infoImageUrl, galleryImages: entry.umaId.galleryImages }); }}
+                              className="p-0.5 rounded text-accent-blue/70 hover:text-accent-blue hover:bg-accent-blue/10 transition-all"
+                              title="Xem thông tin Uma"
+                            >
+                              <Info size={14} />
+                            </button>
+                          )}
+                        </div>
+                        {entry.umaId.stats && (
+                          <div className="flex items-center gap-2.5 mt-1 text-[11px] font-mono text-text-muted">
+                            <span>SPD:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.speed || 0}</strong></span>
+                            <span>STA:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.stamina || 0}</strong></span>
+                            <span>PWR:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.power || 0}</strong></span>
+                            <span>GUT:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.guts || 0}</strong></span>
+                            <span>WIT:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.wisdom || 0}</strong></span>
+                          </div>
                         )}
                       </div>
                       {entry.trainerId && (
@@ -398,7 +422,16 @@ export default function RaceDetailPage() {
                           )}
                         </div>
                         {entry.trainerId && (
-                          <p className="text-xs text-text-muted mt-1 truncate">{entry.trainerId.name}</p>
+                          <p className="text-xs text-text-muted mt-0.5 truncate">{entry.trainerId.name}</p>
+                        )}
+                        {entry.umaId.stats && (
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[10px] font-mono text-text-muted bg-bg-tertiary/60 px-2 py-1 rounded border border-border/40">
+                            <span>SPD:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.speed || 0}</strong></span>
+                            <span>STA:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.stamina || 0}</strong></span>
+                            <span>PWR:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.power || 0}</strong></span>
+                            <span>GUT:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.guts || 0}</strong></span>
+                            <span>WIT:<strong className="text-text-secondary font-semibold ml-0.5">{entry.umaId.stats.wisdom || 0}</strong></span>
+                          </div>
                         )}
                       </div>
                       <span className="odds-badge shrink-0">{entry.odd.toFixed(2)}</span>

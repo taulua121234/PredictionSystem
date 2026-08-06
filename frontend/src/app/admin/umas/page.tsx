@@ -293,7 +293,7 @@ export default function AdminUmasPage() {
                     <div className="text-sm font-semibold">{uma.stats?.guts || 0}</div>
                   </div>
                   <div className="bg-bg-tertiary/50 p-1.5 rounded border border-border/50">
-                    <div className="text-[10px] text-text-muted mb-0.5">WIS</div>
+                    <div className="text-[10px] text-text-muted mb-0.5">WIT</div>
                     <div className="text-sm font-semibold">{uma.stats?.wisdom || 0}</div>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ export default function AdminUmasPage() {
                 <div className="grid grid-cols-5 gap-2">
                   {['speed', 'stamina', 'power', 'guts', 'wisdom'].map((stat) => (
                     <div key={stat}>
-                      <label className="text-[10px] text-text-muted uppercase block text-center mb-1 font-medium">{stat.substring(0,3)}</label>
+                      <label className="text-[10px] text-text-muted uppercase block text-center mb-1 font-medium">{stat === 'wisdom' ? 'WIT' : stat.substring(0,3)}</label>
                       <input type="number" min={0} 
                         value={(editingUma.stats as Record<string, number>)?.[stat] || 0}
                         onChange={e => setEditingUma({
