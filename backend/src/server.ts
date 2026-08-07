@@ -10,7 +10,7 @@ import { createLogger } from './utils/logger';
 const logger = createLogger('server');
 const PORT = process.env.PORT || process.env.BETTING_PORT || 3005;
 
-import { startCronJobs } from './tasks/cron';
+import { startCronJobs, stopCronJobs } from './tasks/cron';
 
 async function start() {
   try {
@@ -27,6 +27,12 @@ async function start() {
         origin: (process.env.CORS_ORIGIN || 'http://localhost:3001').split(',').map(o => o.trim()),
         credentials: true,
       },
+      // Memory optimization for low-spec hosting
+      pingTimeout: 30000,          // Giảm từ 60s default
+      pingInterval: 25000,         // Phát hiện disconnect sớm
+      maxHttpBufferSize: 1e6,      // 1MB max message (giảm từ default 100MB)
+      connectTimeout: 10000,       // Timeout kết nối 10s
+      perMessageDeflate: false,    // Tắt compression (tiết kiệm CPU trên 0.1 vCPU)
     });
 
     setupSocketHandlers(io);
@@ -36,6 +42,22 @@ async function start() {
 
     // Start cron jobs
     startCronJobs();
+
+    // Graceful shutdown — cleanup khi Render restart
+    const gracefulShutdown = (signal: string) => {
+      logger.info(`${signal} received. Shutting down gracefully...`);
+      stopCronJobs();
+      io.close();
+      server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+      });
+      // Force exit after 10s
+      setTimeout(() => process.exit(1), 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     // Start server
     server.listen(PORT, () => {

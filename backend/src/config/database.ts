@@ -27,7 +27,13 @@ export async function connectBettingDb(retries = 5, delayMs = 3000): Promise<voi
   const uri = `${cleanUri(MONGO_URI)}/${BETTING_DB}`;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      await mongoose.connect(uri, { maxPoolSize: 10, serverSelectionTimeoutMS: 5000 });
+      await mongoose.connect(uri, {
+        maxPoolSize: 5,              // Giảm từ 10 → 5 (tiết kiệm ~50MB RAM)
+        minPoolSize: 1,              // Giải phóng idle connections
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 30000,      // Tránh hanging connections
+        maxIdleTimeMS: 30000,        // Đóng connection idle > 30s
+      });
       logger.info(`Connected to MongoDB: ${BETTING_DB}`);
       return;
     } catch (err) {
@@ -46,7 +52,11 @@ let _orderConnection: mongoose.Connection | null = null;
 export function getOrderDbConnection(): mongoose.Connection {
   if (!_orderConnection) {
     const uri = `${cleanUri(MONGO_URI)}/${ORDER_DB}`;
-    _orderConnection = mongoose.createConnection(uri, { maxPoolSize: 5 });
+    _orderConnection = mongoose.createConnection(uri, {
+      maxPoolSize: 2,              // Cross-db chỉ dùng cho login → cần ít connection
+      minPoolSize: 0,              // Đóng hết khi không dùng
+      maxIdleTimeMS: 60000,
+    });
     logger.info(`Cross-db connection established: ${ORDER_DB}`);
   }
   return _orderConnection;

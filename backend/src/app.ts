@@ -1,4 +1,5 @@
 import express, { Express } from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -37,7 +38,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
@@ -54,7 +55,17 @@ app.use(limiter);
 // ==================== Health Check ====================
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'betting-platform', timestamp: new Date().toISOString() });
+  const dbState = mongoose.connection.readyState;
+  // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+  const isDbReady = dbState === 1;
+  const status = isDbReady ? 'ok' : 'degraded';
+  const statusCode = isDbReady ? 200 : 503;
+  res.status(statusCode).json({
+    status,
+    service: 'betting-platform',
+    db: isDbReady ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ==================== API Routes ====================

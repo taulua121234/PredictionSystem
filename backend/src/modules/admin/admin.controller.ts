@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
@@ -219,66 +220,105 @@ export async function deleteRace(req: Request, res: Response) {
  * Cancel a race and refund all pending bets
  */
 export async function cancelRace(req: Request, res: Response) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const race = await Race.findById(req.params.id);
-    if (!race) return respond.notFound(res, 'Race not found');
+    const race = await Race.findById(req.params.id).session(session);
+    if (!race) {
+      await session.abortTransaction();
+      return respond.notFound(res, 'Race not found');
+    }
 
     if (race.state === 'SETTLED') {
+      await session.abortTransaction();
       return respond.badRequest(res, 'Không thể hủy race đã thanh toán');
     }
 
     // Find all pending bets for this race
-    const pendingBets = await Bet.find({ raceId: race._id, status: 'pending' });
+    const pendingBets = await Bet.find({ raceId: race._id, status: 'pending' }).session(session);
 
-    let refundedCount = 0;
-    let totalRefunded = 0;
-
+    // Aggregate refunds per user (reduce DB calls)
+    const userRefunds = new Map<string, { totalAmount: number; totalBetDeduct: number; betIds: mongoose.Types.ObjectId[] }>();
     for (const bet of pendingBets) {
-      const user = await BettingUser.findById(bet.userId);
+      const uid = bet.userId.toString();
+      const existing = userRefunds.get(uid);
+      if (existing) {
+        existing.totalAmount += bet.amount;
+        existing.totalBetDeduct += bet.amount;
+        existing.betIds.push(bet._id);
+      } else {
+        userRefunds.set(uid, { totalAmount: bet.amount, totalBetDeduct: bet.amount, betIds: [bet._id] });
+      }
+    }
+
+    // Batch update all bets to refunded
+    if (pendingBets.length > 0) {
+      await Bet.updateMany(
+        { raceId: race._id, status: 'pending' },
+        { $set: { status: 'refunded' } },
+        { session }
+      );
+    }
+
+    // Update each user and create transaction logs
+    let refundedCount = pendingBets.length;
+    let totalRefunded = 0;
+    const transactionDocs: any[] = [];
+    const pointUpdates = new Map<string, number>();
+
+    for (const [userId, data] of userRefunds) {
+      const user = await BettingUser.findById(userId).session(session);
       if (!user) continue;
 
       const balanceBefore = user.currentPoints;
-      user.currentPoints += bet.amount;
-      user.totalBet -= bet.amount;
-      await user.save();
+      user.currentPoints += data.totalAmount;
+      user.totalBet -= data.totalBetDeduct;
+      await user.save({ session });
 
-      bet.status = 'refunded';
-      bet.payout = bet.amount;
-      await bet.save();
+      pointUpdates.set(userId, user.currentPoints);
+      totalRefunded += data.totalAmount;
 
-      await Transaction.create({
+      transactionDocs.push({
         userId: user._id,
         type: 'REFUND',
-        amount: bet.amount,
+        amount: data.totalAmount,
         balanceBefore,
         balanceAfter: user.currentPoints,
         raceId: race._id,
-        betId: bet._id,
         description: `Hoàn điểm do hủy race: ${race.raceName}`,
       });
+    }
 
-      // Send real-time point update
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`user:${user._id}`).emit('user:point', { currentPoints: user.currentPoints });
-      }
-
-      refundedCount++;
-      totalRefunded += bet.amount;
+    if (transactionDocs.length > 0) {
+      await Transaction.insertMany(transactionDocs, { session });
     }
 
     race.state = 'CANCELLED';
-    await race.save();
+    await race.save({ session });
+
+    await session.commitTransaction();
+
+    // Broadcast point updates (outside transaction)
+    const io = req.app.get('io');
+    if (io) {
+      pointUpdates.forEach((currentPoints, userId) => {
+        io.to(`user:${userId}`).emit('user:point', { currentPoints });
+      });
+    }
 
     logger.info(`Race cancelled: ${race.raceName}. Refunded ${refundedCount} bets, total ${totalRefunded} points`);
-    respond.success(res, { 
+    respond.success(res, {
       message: `Đã hủy race và hoàn ${totalRefunded.toLocaleString()} điểm cho ${refundedCount} lượt dự đoán`,
       refundedCount,
       totalRefunded,
     });
   } catch (err) {
+    await session.abortTransaction();
     logger.error('Cancel race error:', err);
     respond.serverError(res, 'Failed to cancel race');
+  } finally {
+    session.endSession();
   }
 }
 

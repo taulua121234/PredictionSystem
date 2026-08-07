@@ -36,9 +36,9 @@ export async function placeBet(req: Request, res: Response) {
     }
 
     const betAmount = Number(amount);
-    if (!Number.isFinite(betAmount) || betAmount < 0) {
+    if (!Number.isFinite(betAmount) || betAmount <= 0) {
       await session.abortTransaction();
-      return respond.badRequest(res, 'Prediction amount must be 0 points or more');
+      return respond.badRequest(res, 'Prediction amount must be greater than 0');
     }
 
     // 1. Check race state
