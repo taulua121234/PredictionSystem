@@ -23,26 +23,60 @@ else
     exit 1
 fi
 
-echo "=== 5. Cài đặt dependencies (pnpm install) ==="
+echo "=== 5. Cấu hình file .env trên VPS ==="
+cat << 'EOF' > "$PROJECT_DIR/.env"
+# ==================== MongoDB ====================
+MONGODB_URI=mongodb+srv://admin:admin@cluster0.psakfab.mongodb.net/
+MONGODB_BETTING_DB=betting_db
+MONGODB_ORDER_DB=evient_orders
+
+# ==================== JWT ====================
+JWT_SECRET=BettingPlatformSecret_Z5gC2JlTAUs7Pu
+JWT_EXPIRES_IN=7d
+
+# ==================== Server ====================
+BETTING_PORT=3035
+NODE_ENV=production
+
+# ==================== CORS ====================
+CORS_ORIGIN=http://123.16.178.213:3031,http://localhost:3031,http://127.0.0.1:3031,http://123.16.178.213:3035
+
+# ==================== Frontend API & Socket ====================
+NEXT_PUBLIC_API_URL=http://123.16.178.213:3035/api
+NEXT_PUBLIC_SOCKET_URL=http://123.16.178.213:3035
+
+# ==================== Admin Seed ====================
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+
+# ==================== Cloudinary ====================
+CLOUDINARY_CLOUD_NAME=dhakrxbsd
+CLOUDINARY_API_KEY=289113622635594
+CLOUDINARY_API_SECRET=HNVlafCEi7tpquOvQytAJ5u_86M
+EOF
+
+cp "$PROJECT_DIR/.env" "$PROJECT_DIR/frontend/.env.local"
+
+echo "=== 6. Cài đặt dependencies (pnpm install) ==="
 pnpm install
 
-echo "=== 6. Build Backend & Frontend ==="
+echo "=== 7. Build Backend & Frontend ==="
 echo "Building Backend..."
 cd "$PROJECT_DIR/backend"
 pnpm build
 
 echo "Building Frontend..."
 cd "$PROJECT_DIR/frontend"
-pnpm build
+NEXT_PUBLIC_API_URL=http://123.16.178.213:3035/api NEXT_PUBLIC_SOCKET_URL=http://123.16.178.213:3035 pnpm build
 
-echo "=== 7. Quản lý và khởi chạy ứng dụng bằng PM2 ==="
+echo "=== 8. Quản lý và khởi chạy ứng dụng bằng PM2 ==="
 pm2 delete all 2>/dev/null || true
 
-# Start Backend
+# Start Backend (Port 3035)
 cd "$PROJECT_DIR/backend"
 pm2 start "node dist/server.js" --name "prediction-backend"
 
-# Start Frontend
+# Start Frontend (Port 3031)
 cd "$PROJECT_DIR/frontend"
 pm2 start "pnpm start" --name "prediction-frontend"
 
@@ -51,6 +85,8 @@ pm2 save
 
 echo ""
 echo "=================================================="
-echo " PROJEC T ĐÃ ĐƯỢC CÀI ĐẶT VÀ CHẠY THÀNH CÔNG! "
+echo " DỰ ÁN ĐÃ ĐƯỢC CHẠY THÀNH CÔNG TRÊN PUBLIC IP! "
+echo " Frontend: http://123.16.178.213:3031 "
+echo " Backend API: http://123.16.178.213:3035/api "
 echo "=================================================="
 pm2 status
