@@ -57,8 +57,9 @@ EOF
 
 cp "$PROJECT_DIR/.env" "$PROJECT_DIR/frontend/.env.local"
 
-echo "=== 6. Cài đặt dependencies (pnpm install) ==="
-pnpm install
+echo "=== 6. Cài đặt dependencies (pnpm install --force) ==="
+rm -rf node_modules frontend/node_modules backend/node_modules
+CI=true pnpm install --force --no-frozen-lockfile
 
 echo "=== 7. Build Backend & Frontend ==="
 echo "Building Backend..."
