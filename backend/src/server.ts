@@ -69,7 +69,7 @@ async function start() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     // Start server
-    server.listen(PORT, () => {
+    server.listen(Number(PORT), '0.0.0.0', () => {
       logger.info(`🏇 Betting Platform running on port ${PORT}`);
       logger.info(`   API: http://localhost:${PORT}/api`);
       logger.info(`   WebSocket: ws://localhost:${PORT}`);
