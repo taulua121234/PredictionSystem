@@ -55,6 +55,7 @@ CLOUDINARY_API_KEY=289113622635594
 CLOUDINARY_API_SECRET=HNVlafCEi7tpquOvQytAJ5u_86M
 EOF
 
+cp "$PROJECT_DIR/.env" "$PROJECT_DIR/backend/.env"
 cp "$PROJECT_DIR/.env" "$PROJECT_DIR/frontend/.env.local"
 
 echo "=== 6. Cài đặt dependencies (pnpm install --force) ==="
