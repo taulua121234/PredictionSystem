@@ -47,7 +47,7 @@ NEXT_PUBLIC_SOCKET_URL=http://123.16.178.213:3035
 
 # ==================== Admin Seed ====================
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=Khang2005!
 
 # ==================== Cloudinary ====================
 CLOUDINARY_CLOUD_NAME=dhakrxbsd

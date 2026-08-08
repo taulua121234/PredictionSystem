@@ -2,6 +2,9 @@ import paramiko
 import sys
 import time
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 def run_ssh(host, port, username, password):
     print(f"[*] Connecting to {username}@{host}:{port}...")
     ssh = paramiko.SSHClient()
@@ -13,7 +16,7 @@ def run_ssh(host, port, username, password):
         print(f"[-] SSH Connection failed: {e}")
         sys.exit(1)
 
-    cmd = "cd ~/PredictionSystem && git fetch origin && git checkout deploy && git pull origin deploy && chmod +x setup_vps.sh && ./setup_vps.sh"
+    cmd = "cd ~/PredictionSystem && git fetch origin && git reset --hard origin/deploy && chmod +x setup_vps.sh && ./setup_vps.sh"
     print(f"[*] Executing deployment script on VPS...")
     
     channel = ssh.get_transport().open_session()
@@ -25,7 +28,7 @@ def run_ssh(host, port, username, password):
     
     while True:
         if channel.recv_ready():
-            out = channel.recv(1024).decode('utf-8', errors='ignore')
+            out = channel.recv(1024).decode('utf-8', errors='replace')
             sys.stdout.write(out)
             sys.stdout.flush()
             buffer += out
@@ -34,9 +37,8 @@ def run_ssh(host, port, username, password):
                 sudo_sent = True
                 buffer = ""
         if channel.exit_status_ready():
-            # Flush remaining output
             while channel.recv_ready():
-                out = channel.recv(1024).decode('utf-8', errors='ignore')
+                out = channel.recv(1024).decode('utf-8', errors='replace')
                 sys.stdout.write(out)
                 sys.stdout.flush()
             break
@@ -47,8 +49,5 @@ def run_ssh(host, port, username, password):
     ssh.close()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python auto_ssh_deploy.py <password>")
-        sys.exit(1)
-    pwd = sys.argv[1]
+    pwd = sys.argv[1] if len(sys.argv) > 1 else "enima"
     run_ssh("123.16.178.213", 3030, "enima", pwd)
