@@ -21,10 +21,19 @@ async function start() {
     // Create HTTP server
     const server = http.createServer(app);
 
+    const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8000').split(',').map(o => o.trim());
+    const isDev = process.env.NODE_ENV === 'development';
+
     // Setup Socket.IO
     const io = new SocketServer(server, {
       cors: {
-        origin: (process.env.CORS_ORIGIN || 'http://localhost:3001').split(',').map(o => o.trim()),
+        origin: isDev ? true : (origin, callback) => {
+          if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
         credentials: true,
       },
       // Memory optimization for low-spec hosting

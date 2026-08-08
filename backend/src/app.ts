@@ -23,13 +23,19 @@ app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3001')
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8000,http://127.0.0.1:8000')
   .split(',')
   .map(o => o.trim());
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const isDev = process.env.NODE_ENV === 'development';
+    if (
+      !origin ||
+      isDev ||
+      allowedOrigins.includes('*') ||
+      allowedOrigins.includes(origin)
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
